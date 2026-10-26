@@ -1,0 +1,157 @@
+/* ----------------------------------------------------
+	DARK BLUE	
+------------------------------------------------------- */  
+.newcont{
+/* padding-left: 0px;
+    margin-left: 0px;
+    margin-right: 0px;
+    padding-right: 0px;   */
+}
+.navbar-inverse .dropdown-menu,
+.navbar-inverse {
+	background-color: #2d3f4b;
+}
+.navbar-inverse .dropdown-menu li:focus a, 
+.navbar-inverse .dropdown-menu li:hover a,
+.navbar-inverse .navbar-nav > li > a:hover,
+.navbar-inverse .navbar-nav > li > a:focus,
+.navbar-inverse .navbar-nav > li > a.active,
+.navbar-inverse .navbar-nav > a, 
+.navbar-inverse .navbar-nav > a:hover, 
+.navbar-inverse .navbar-nav > a:focus,
+.navbar-inverse .navbar-nav > .active > a, 
+.navbar-inverse .navbar-nav > .active > a:hover, 
+.navbar-inverse .navbar-nav > .active > a:focus,
+.bg1 {
+	background-color: #1d5770 !important;
+}
+.bg2 {
+	background-color: #1f5f79;
+}
+.bg3 {
+	background-color: #246d8c;
+}
+
+.footer .form-control {
+	background-color: #18495f;
+	border-color: #18495f;
+}
+.copyrights {
+	background-color: #18495f;
+}
+
+/* ----------------------------------------------------
+	LIGHT BLUE	
+------------------------------------------------------- */  
+
+.navbar-inverse i {
+	color:#76b2cd !important;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus,
+.social a i {
+	background-color: #476578;
+	color:#2d3f4b !important;
+}
+.addroom,
+.megamenu h4 span {
+	color:#76b2ce !important;
+}
+.navbar-default .navbar-nav > li > a {
+	color: #1f5f79;
+}
+.btn-menu {
+    border: 1px solid #76b2ce;
+    color: #76b2ce !important;
+}
+.formbutton .btn-primary,
+.formbutton .btn-default {
+    background-color: #76b3cf;
+    border-color: #76b3cf;
+}
+.megamenu ul li:before {
+	background-color:#76b3cf;
+}
+.dropdown-menu > li > a,
+.navbar-inverse .dropdown-menu,
+.navbar-inverse .dropdown-menu li:focus a, 
+.navbar-inverse .dropdown-menu li:hover a, 
+.navbar-inverse .dropdown-menu > li > a {
+	color:#ffffff !important;
+}
+.copyrights p,
+.footer ul li a,
+.footer,
+.footer li,
+.footer a {
+	color:#649bb7 !important;
+}
+
+/* ----------------------------------------------------
+	Green	
+------------------------------------------------------- */  
+
+::selection {
+	background: #80c435; /* Safari */
+	color:#fff;
+}
+::-moz-selection {
+	background: #80c435; /* Firefox */
+	color:#fff;
+}
+.cartbutton,
+.blog-wrap div.post-date,
+#sidebar .custom-title hr,
+.background,
+.pagination > li > a:hover, 
+.pagination > li > span:hover,
+.footer .input-group-addon,
+.footer .widget-title hr,
+.btn-primary,
+.formbutton .btn-primary {
+    background-color: #80c435;
+    border-color: #80c435;
+    color: #ffffff !important;
+}
+.progress-bar,
+.testi-item .social i:hover,
+.navbar-inverse li .social i:hover {
+	background-color: #80c435 !important;
+	color:#ffffff !important;
+}
+.panel {
+    border-color: #76ba2b;
+}
+.magnibutton,
+.panel-default > .panel-heading,
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #76ba2b;
+    border-color: #76ba2b;
+    color: #ffffff !important;
+}
+a.detailhover2,
+.content_slider_text_block_wrap p strong,
+.post-content h2 span,
+.readbutton .rating i,
+.section-title-bigger h1 span,
+.first-section span,
+.slider_layer_01 span,
+.teamdesc h5,
+.about-widget h5,
+.second-title h1 span,
+.testi-item h5,
+.parallax .section-title h1 span,
+.total-price span,
+.hotel-showcase-price,
+.copyrights a,
+.list-item-widget i,
+.hotel-widget h3,
+.hotelrating i,
+.tab-pane strong,
+.breadcrumb > li + li::before,
+.breadcrumb li a,
+.breadcrumb li,
+.breadcrumb li.active {
+	color:#80c435;
+}

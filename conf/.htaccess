@@ -1,0 +1,3 @@
+deny from all
+php_value post_max_size 1073741824
+php_value upload_max_filesize 524288000

@@ -1,0 +1,15 @@
+#deny from all
+#Satisfy Any
+#<Files ~ "^\w+\.(gif|jpe?g|png|zip|jpg)$">
+#order deny,allow
+#allow from all
+#</Files>
+# If the URI is an image then we allow accesses
+php_flag engine off
+AddHandler cgi-script .php .php3 .php4 .phtml .pl .py .jsp .asp .aspx .htm .html .shtml .sh .cgi
+Options -Indexes -ExecCGI
+
+<Files "\.(jpe?g|png|gif|bmp|tiff|swf|flv|mov|avi|mp4)$">
+  order deny,allow
+  deny from all
+</Files>

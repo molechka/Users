@@ -1,0 +1,1 @@
+{"class":"\\yii\\mongodb\\Connection","dsn":"mongodb:\/\/127.0.0.1\/wantmay_2?journal=1&w=majority&wTimeoutMS=20000"}

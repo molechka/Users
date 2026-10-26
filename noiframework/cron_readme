@@ -1,0 +1,33 @@
+cd ./noiframework/tests
+./codecept.phar run
+
+
+Для запуска NoiCMS в режиме cron вам необходимо
+запустить следующую команду
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii cron
+это команда иницирует запуск всех доступных плагинов в режиме cron
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii cron html
+это команда иницирует запуск только одного плагина в режиме cron ,это плагин html
+
+
+Для запуска Realtime приложения,вам необходимо   запустить следующую команду 
+
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii realtime html 8081
+это команда запустит сервер для обработки событий в режиме реальном времени для плагина html на порту 8081
+
+Простой пример подключения к серверу
+
+  <script>
+   var conn = new WebSocket('ws://landingpage.noi.al:8081/');
+conn.onopen = function(e) {
+    console.log("Connection established!");
+    conn.send('Hello World!');
+};
+
+conn.onmessage = function(e) {
+    console.log(e.data);
+};
+ 
+                </script>
+туториал
+http://socketo.me/docs/hello-world

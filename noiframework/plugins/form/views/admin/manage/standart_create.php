@@ -1,0 +1,32 @@
+<h3><?=$mg->title;?></h3>
+
+<form action="<?=  $mg->view->setRoute('/create/2');?>" method="POST" enctype="multipart/form-data">
+    <table class="table">
+     <?
+
+     if(isset($mg->fields->array_fields)){
+     foreach($mg->fields->array_fields as $field){
+     $type="hidden";
+     if(isset($mg->fields->array_type[$field]['type'])){
+     $type=$mg->fields->array_type[$field]['type'];
+     }
+
+     $title=$mg->fields->array_type[$field]['label'];
+     $opt=$mg->fields->array_type[$field]['opt'];
+    if(isset($opt['plugin']) and $opt['plugin']->isVisible()){
+    ?>
+    <tr>
+    <td><?=$title;?></td>
+    <td><?=$mg->fields->render[$field]?> </td>
+    </tr>
+    <?
+     }
+     }
+     }
+     ?>
+    <tr>
+        <td><input type="hidden" name="act_create" value="123213213"></td>
+     <td><input type="submit" name="act_create_<?=$mg->name_short;?>" value="<?=NoiCore::app()->lang('mongogrid_create');?>"></td>
+    </tr>
+    </table>
+</form>

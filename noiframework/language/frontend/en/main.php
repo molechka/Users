@@ -1,0 +1,71 @@
+<?php
+
+$lang['mongogrid_create_notify']="Action done successfully!";
+$lang['mongogrid_return_back']="Back to list";
+$lang['mongogrid_create']="Create";
+$lang['mongogrid_delete']="Delete";
+$lang['mongogrid_edit']="Edit";
+$lang['mongogrid_search']="Search";
+$lang['mongogrid_look']="Look";
+$lang['mongogrid_date']="Date";
+$lang['mongogrid_all']="All";
+
+$lang['sponsor_data']="Sponsors information";
+$lang['sponsor_data_email']="Email";
+$lang['sponsor_data_name']="Name";
+$lang['sponsor_data_surname']="Surname";
+$lang['sponsor_data_skype']="Skype";
+$lang['sponsor_data_phone']="Phone";
+$lang['sponsor_data_country']="Country";
+$lang['sponsor_data_city']="City";
+$lang['guest_auth']="Authorization";
+$lang['guest_enter']="Log in";
+$lang['user_accoyunt']="Account";
+$lang['user_logout']="Log out";
+$lang['user_portfel']="Portfolio";
+$lang['user_vaucher']="Vouchers";
+$lang['user_chet']="Invoice";
+$lang['user_finance']="Finances";
+$lang['user_binar']="Binary";
+$lang['user_classic']="Linear";
+$lang['users']="Users";
+$lang['user_reg_promo']="Registration of new promoter";
+$lang['user_not_active']="You are not active";
+$lang['user_not_active2']="Inactive";
+$lang['user_activate']="Activate";
+$lang['user_vaucher_summ']="Amount of vouchers";
+$lang['user_activate_to']="Active until";
+$lang['user_continue']="Extend contract";
+$lang['user_notact']="Inactive";
+$lang['user_referal_link']="Your referral link";
+$lang['user_copy']="Copy to clipboard";
+$lang['user_act_copy']="Link has been copied to the clipboard";
+$lang['structure']="Structure";
+
+$lang['mlink_home']="Home";
+$lang['mlink_entertainment']="Attractions";
+$lang['mlink_hotels']="Hotels";
+$lang['mlink_opportunity']="Opportunity";
+$lang['mlink_advertising']="Advertising";
+$lang['mlink_faq']="FAQ";
+$lang['mlink_aboutus']="About us";
+$lang['mlink_news']="News";
+$lang['mlink_contact']="Contact";
+$lang['mlink_return']="Return";
+$lang['mlink_login']="Login";
+$lang['mlink_register']="Register";
+$lang['mlink_pcond']="Privacy policy";
+$lang['mlink_goods']="Usefull links";
+$lang['mlink_urur']="Legal aspects and social networks";
+$lang['hotels_h2']="The best hotels in North Coast, tourism partners program Caribbean Bridge";
+$lang['website']="Look  website";
+$lang['home_title']="Explore Dominican Republic Attractions";
+$lang['last_articles']="Recent Posts";
+$lang['news_readmore']="read more";
+
+
+$lang['form_field_name']="Name";
+$lang['form_field_message']="Message";
+$lang['form_field_captcha']="Captcha";
+$lang['form_field_send']="Send";
+$lang['contact_title']="Contact with us";

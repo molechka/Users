@@ -1,0 +1,56 @@
+ul,
+ol,
+li,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+pre,
+form,
+body,
+html,
+p,
+blockquote,
+fieldset,
+input,
+iframe,
+img,
+figure {
+    margin: 0;
+    padding: 0;
+    font-size: 100%;
+    border: 0;
+}
+a img {
+    border: 0;
+}
+a {
+    text-decoration: none;
+}
+body {
+    line-height: 1;
+}
+input:focus,
+select:focus,
+textarea:focus,
+button:focus {
+    outline: none;
+}
+ol, ul {
+    list-style: none;
+}
+
+strong {
+    font-weight: bold;
+}
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b {
+    font-weight: normal;
+}

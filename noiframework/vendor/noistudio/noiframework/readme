@@ -1,0 +1,73 @@
+How to install Stable version 
+add composer.json project next:
+ "repositories": [
+      {
+        "type": "git",
+        "url": "https://noistudio@bitbucket.org/noistudio/noiframework.git",
+        "reference":"dev-master"
+      }],
+and replace 
+  "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": "*",
+        "yiisoft/yii2-bootstrap": "*",
+        "yiisoft/yii2-swiftmailer": "*"
+        
+        
+        
+    },
+on 
+ "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": "*",
+        "yiisoft/yii2-bootstrap": "*",
+        "yiisoft/yii2-swiftmailer": "*",
+        "noistudio/noiframework": "dev-stable"
+        
+        
+        
+    },
+
+open you console and  input next command 
+composer global require "fxp/composer-asset-plugin:1.0.3"
+trying this command 
+composer  require   noistudio/noiframework:dev-master
+if not work trying next 
+composer  update   noistudio/noiframework:dev-master
+if not work trying next 
+composer  require  noistudio/noiframework:dev-master  --no-plugins
+
+Запуск тестов 
+cd ./noiframework/tests
+./codecept.phar run
+
+
+Для запуска NoiFramework в режиме cron вам необходимо
+запустить следующую команду
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii cron
+это команда иницирует запуск всех доступных плагинов в режиме cron
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii cron html
+это команда иницирует запуск только одного плагина в режиме cron ,это плагин html
+
+
+Для запуска Realtime приложения,вам необходимо   запустить следующую команду 
+
+/var/www/admin/www/shop.noicms.com/noicmsshop/yii realtime html 8081
+это команда запустит сервер для обработки событий в режиме реальном времени для плагина html на порту 8081
+
+Простой пример подключения к серверу
+
+  <script>
+   var conn = new WebSocket('ws://landingpage.noi.al:8081/');
+conn.onopen = function(e) {
+    console.log("Connection established!");
+    conn.send('Hello World!');
+};
+
+conn.onmessage = function(e) {
+    console.log(e.data);
+};
+ 
+                </script>
+туториал
+http://socketo.me/docs/hello-world

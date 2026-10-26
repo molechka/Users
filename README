@@ -1,0 +1,16 @@
+Для того чтобы корректно установить систему(stable),вам необходимо сделать следующее 
+Открыть консоль.
+Зайти в нужную директорию куда вы хотите развернуть проект.
+git clone -b stable https://noistudio@bitbucket.org/noistudio/noibasic.git .
+cd noiframework
+composer global require "fxp/composer-asset-plugin:~1.0.3"
+composer install
+
+Все готово! Система полностью установлена!
+
+Для того чтобы обновить систему вам необходимо удалить 
+всю папку /noiframework/vendor
+Удалить файл /noiframework/composer.lock
+После этого выполнить следующие команды
+cd noiframework
+composer install

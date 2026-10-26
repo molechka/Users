@@ -1,0 +1,46 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Yii console bootstrap file.
+ *
+ * @link http://www.yiiframework.com/
+ * @copyright Copyright (c) 2008 Yii Software LLC
+ * @license http://www.yiiframework.com/license/
+ */
+ 
+defined('YII_DEBUG') or define('YII_DEBUG', true);
+
+// fcgi doesn't have STDIN and STDOUT defined by default
+defined('STDIN') or define('STDIN', fopen('php://stdin', 'r'));
+defined('STDOUT') or define('STDOUT', fopen('php://stdout', 'w'));
+
+if(file_exists(__DIR__."/../conf/config.php")){
+require_once(__DIR__."/../conf/config.php");
+}else if(file_exists("../conf/config.php")){
+ require_once("../conf/config.php");
+}
+ 
+ if(isset($config_admin['document_root'])){
+define("DOCUMENT_ROOT",$config_admin['document_root']);
+
+define("NOIPRODUCT_FOLDER","noiframework");
+define('YII_PLUGIN_PATH',DOCUMENT_ROOT."/".NOIPRODUCT_FOLDER."/plugins/");
+define('YII_COMPONENT_PATH',DOCUMENT_ROOT."/".NOIPRODUCT_FOLDER."/components/");
+define("YII_CACHE_TIME",300);
+define("YII_CACHE_ENABLE",FALSE);
+
+define("THEMES_PATH","/templates/");
+define("ADMIN_PATH",DOCUMENT_ROOT."/themes/admin/");
+
+define("PATH_TO_ENGINE",DOCUMENT_ROOT."/".NOIPRODUCT_FOLDER);
+define("DB_TYPE","mongodb");
+
+require(__DIR__ . '/vendor/autoload.php');
+require(__DIR__ . '/vendor/yiisoft/yii2/Yii.php');
+
+$config = require(__DIR__ . '/config/console.php');
+
+$application = new yii\console\Application($config);
+$exitCode = $application->run();
+exit($exitCode);
+ }

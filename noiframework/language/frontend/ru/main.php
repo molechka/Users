@@ -1,0 +1,71 @@
+<?php
+
+$lang['mongogrid_create_notify']="Действие успешно сделано!";
+$lang['mongogrid_return_back']="вернуться к списку";
+$lang['mongogrid_create']="Создать";
+$lang['mongogrid_delete']="Удалить";
+$lang['mongogrid_edit']="Редактировать";
+$lang['mongogrid_search']="Поиск";
+$lang['mongogrid_look']="Посмотреть";
+$lang['mongogrid_date']="Дата";
+$lang['mongogrid_all']="Всего";
+
+$lang['sponsor_data']="Данные спонсора";
+$lang['sponsor_data_email']="Email";
+$lang['sponsor_data_name']="Имя";
+$lang['sponsor_data_surname']="Фамилия";
+$lang['sponsor_data_skype']="Скайп";
+$lang['sponsor_data_phone']="Телефон";
+$lang['sponsor_data_country']="Страна";
+$lang['sponsor_data_city']="Город";
+$lang['guest_auth']="Авторизация";
+$lang['guest_enter']="Войти";
+$lang['user_accoyunt']="Аккаунт";
+$lang['user_logout']="Выход";
+$lang['user_portfel']="Портфель";
+$lang['user_vaucher']="Ваучеры";
+$lang['user_chet']="Счет";
+$lang['user_finance']="Финансы";
+$lang['user_binar']="Бинарная";
+$lang['user_classic']="Линейная";
+$lang['users']="Пользователи";
+$lang['user_reg_promo']="Зарегистрировать промоутера";
+$lang['user_not_active']="Вы не активны";
+$lang['user_not_active2']="Не активен";
+$lang['user_activate']="Активировать";
+$lang['user_vaucher_summ']="Ваучерная сумма";
+$lang['user_activate_to']="Активен до";
+$lang['user_continue']="Продлить контракт";
+$lang['user_notact']="Неактивны";
+$lang['user_referal_link']="Ваша реферальная ссылка";
+$lang['user_copy']="Копировать в буфер обмена";
+$lang['user_act_copy']="Ссылка скопирована в буфер обмена";
+$lang['structure']="Структура";
+
+
+$lang['mlink_home']="Главная";
+$lang['mlink_entertainment']="Развлечения";
+$lang['mlink_hotels']="Отели";
+$lang['mlink_opportunity']="Возможность";
+$lang['mlink_advertising']="Реклама";
+$lang['mlink_faq']="Вопросы";
+$lang['mlink_aboutus']="О нас";
+$lang['mlink_news']="Новости";
+$lang['mlink_contact']="Контакты";
+$lang['mlink_return']="Вернуться";
+$lang['mlink_login']="Вход";
+$lang['mlink_register']="Регистрация";
+$lang['mlink_pcond']="Политика конфиденциальности";
+$lang['mlink_goods']="Полезные ссылки";
+$lang['mlink_urur']="Юридические аспекты и социальные сети";
+$lang['hotels_h2']="Лучшие отели Северного побережья, партнеры туристической программы Caribbean Bridge";
+$lang['website']="Посетить website";
+$lang['home_title']="Откройте для себя Доминиканскую республику";
+$lang['last_articles']="Последние статьи";
+$lang['news_readmore']="читать далее";
+
+$lang['form_field_name']="Имя";
+$lang['form_field_message']="Сообщение";
+$lang['form_field_captcha']="Капча";
+$lang['form_field_send']="Отправить";
+$lang['contact_title']="Свяжитесь с нами";

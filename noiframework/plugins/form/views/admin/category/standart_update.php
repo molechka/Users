@@ -1,0 +1,44 @@
+<h3><?=$mg->title;?></h3>
+
+
+<?=NoiCore::admin()->getManageLink("/form/c/".$mg->result[0]['_id']->__toString().".html");?>
+<form action="<?=$mg->setRoute('/update/'.$mg->view->tmp_var[2]);?>" method="POST" enctype="multipart/form-data">
+    <table class="table">
+     <?
+
+     if($mg->fields->showid){
+
+     ?>
+     <tr>
+     <td>_id</td>
+
+     <td><?=$mg->result[0]['_id']->__toString();?></td>
+     </tr>
+     <?
+     }
+     if(isset($mg->fields->array_fields)){
+     foreach($mg->fields->array_fields as $field){
+     $type="hidden";
+     if(isset($mg->fields->array_type[$field]['type'])){
+     $type=$mg->fields->array_type[$field]['type'];
+     }
+    $opt=$mg->fields->array_type[$field]['opt'];
+    if(isset($opt['plugin']) and $opt['plugin']->isVisible()){
+     $title=$mg->fields->array_type[$field]['label'];
+
+    ?>
+    <tr>
+    <td><?=$title;?></td>
+    <td><?=$mg->fields->render[$field];?> </td>
+    </tr>
+    <?
+    }
+     }
+     }
+     ?>
+    <tr>
+     <td></td>
+     <td><input type="submit" name="act_update" value="<?=NoiCore::app()->lang('content_edit');?>"></td>
+    </tr>
+    </table>
+</form>

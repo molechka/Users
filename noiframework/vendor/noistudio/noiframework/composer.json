@@ -1,0 +1,65 @@
+{
+    "name": "noistudio/noiframework",
+ 
+   "type" : "library",
+  "homepage": "http://noibiz.com",
+  "version": "dev-stable",
+  "description": "Core Library yii2 ",
+  "keywords": ["noi","noistudio"],
+  "license": "MIT",
+   "repositories": [
+        { "type": "vcs", "url": "https://bitbucket.org/noistudio/noiframework","reference":"master" },
+        { "type": "vcs", "url": "https://bitbucket.org/noistudio/noiframework","reference":"stable" }
+
+    ],
+    "source": {
+        "url": "https://bitbucket.org/noistudio/noiframework",
+        "type": "git",
+        "reference":"stable"
+    }, "autoload": {
+        "psr-4": {
+            "noicms\\frontend\\":        "core/modules/frontend/",
+            "noicms\\admin\\":        "core/modules/admin/",
+            "noicms\\mongogrid\\": "mongogrid/",
+            "noicms\\paginator\\":"paginator/",
+            "noicms\\commands\\":"console/",
+               "noicms\\core\\":"core/system_core/",
+             "noi\\helpers\\":"helpers/"   
+         
+            
+        },
+        "files": [
+            "auto_class.php"
+          
+        ]
+        
+    },
+    "require": {
+        "yiisoft/yii2": "*",
+       "yiisoft/yii2-mongodb": "^2.0"
+       
+    },
+   "require-dev": {
+        "yiisoft/yii2": "*",
+       "yiisoft/yii2-mongodb": "^2.0"
+       
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "noicms\\frontend\\":        "core/modules/frontend/",
+            "noicms\\admin\\":        "core/modules/admin/",
+            "noicms\\mongogrid\\": "mongogrid/",
+            "noicms\\paginator\\":"paginator/",
+            "noicms\\commands\\":"console/",
+               "noicms\\core\\":"core/system_core/"
+         
+            
+        },
+        "files": [
+            "auto_class.php"
+          
+        ]
+        
+    }
+    
+}
