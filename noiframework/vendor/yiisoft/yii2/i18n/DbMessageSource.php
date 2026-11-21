@@ -1,20 +1,19 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\i18n;
 
-use Yii;
 use yii\base\InvalidConfigException;
+use yii\caching\CacheInterface;
+use yii\db\Connection;
 use yii\db\Expression;
+use yii\db\Query;
 use yii\di\Instance;
 use yii\helpers\ArrayHelper;
-use yii\caching\Cache;
-use yii\db\Connection;
-use yii\db\Query;
 
 /**
  * DbMessageSource extends [[MessageSource]] and represents a message source that stores translated
@@ -43,8 +42,7 @@ class DbMessageSource extends MessageSource
      * Prefix which would be used when generating cache key.
      * @deprecated This constant has never been used and will be removed in 2.1.0.
      */
-    const CACHE_KEY_PREFIX = 'DbMessageSource';
-
+    public const CACHE_KEY_PREFIX = 'DbMessageSource';
     /**
      * @var Connection|array|string the DB connection object or the application component ID of the DB connection.
      *
@@ -55,7 +53,7 @@ class DbMessageSource extends MessageSource
      */
     public $db = 'db';
     /**
-     * @var Cache|array|string the cache object or the application component ID of the cache object.
+     * @var CacheInterface|array|string the cache object or the application component ID of the cache object.
      * The messages data will be cached using this cache object.
      * Note, that to enable caching you have to set [[enableCaching]] to `true`, otherwise setting this property has no effect.
      *
@@ -76,13 +74,13 @@ class DbMessageSource extends MessageSource
      */
     public $messageTable = '{{%message}}';
     /**
-     * @var integer the time in seconds that the messages can remain valid in cache.
+     * @var int the time in seconds that the messages can remain valid in cache.
      * Use 0 to indicate that the cached data will never expire.
      * @see enableCaching
      */
     public $cachingDuration = 0;
     /**
-     * @var boolean whether to enable caching translated messages
+     * @var bool whether to enable caching translated messages
      */
     public $enableCaching = false;
 
@@ -98,7 +96,7 @@ class DbMessageSource extends MessageSource
         parent::init();
         $this->db = Instance::ensure($this->db, Connection::className());
         if ($this->enableCaching) {
-            $this->cache = Instance::ensure($this->cache, Cache::className());
+            $this->cache = Instance::ensure($this->cache, 'yii\caching\CacheInterface');
         }
     }
 
@@ -127,9 +125,9 @@ class DbMessageSource extends MessageSource
             }
 
             return $messages;
-        } else {
-            return $this->loadMessagesFromDb($category, $language);
         }
+
+        return $this->loadMessagesFromDb($category, $language);
     }
 
     /**
@@ -146,7 +144,7 @@ class DbMessageSource extends MessageSource
             ->where([
                 't1.id' => new Expression('[[t2.id]]'),
                 't1.category' => $category,
-                't2.language' => $language
+                't2.language' => $language,
             ]);
 
         $fallbackLanguage = substr($language, 0, 2);
@@ -181,9 +179,9 @@ class DbMessageSource extends MessageSource
             ->where([
                 't1.id' => new Expression('[[t2.id]]'),
                 't1.category' => $category,
-                't2.language' => $fallbackLanguage
+                't2.language' => $fallbackLanguage,
             ])->andWhere([
-                'NOT IN', 't2.id', (new Query())->select('[[id]]')->from($this->messageTable)->where(['language' => $language])
+                'NOT IN', 't2.id', (new Query())->select('[[id]]')->from($this->messageTable)->where(['language' => $language]),
             ]);
     }
 }

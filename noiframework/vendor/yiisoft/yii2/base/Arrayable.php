@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
@@ -33,7 +33,7 @@ interface Arrayable
      * the corresponding field definition which can be either an object property name or a PHP callable
      * returning the corresponding field value. The signature of the callable should be:
      *
-     * ```php
+     * ```
      * function ($model, $field) {
      *     // return field value
      * }
@@ -47,7 +47,7 @@ interface Arrayable
      * - `fullName`: the field name is `fullName`. Its value is obtained by concatenating `first_name`
      *   and `last_name`.
      *
-     * ```php
+     * ```
      * return [
      *     'email',
      *     'firstName' => 'first_name',
@@ -85,7 +85,7 @@ interface Arrayable
      * @param array $expand the additional fields that the output array should contain.
      * Fields not specified in [[extraFields()]] will be ignored. If this parameter is empty, no extra fields
      * will be returned.
-     * @param boolean $recursive whether to recursively return array representation of embedded objects.
+     * @param bool $recursive whether to recursively return array representation of embedded objects.
      * @return array the array representation of the object
      */
     public function toArray(array $fields = [], array $expand = [], $recursive = true);

@@ -99,6 +99,7 @@ class PluginUser{
    public function loads($id_user="0",$field="last_id"){
 
        if($id_user=="0"){
+   if(!is_array($this->user_site) or !isset($this->user_site['last_id'])){ return false; }
    $id_user=$this->user_site['last_id'];
   
    }
@@ -124,6 +125,7 @@ class PluginUser{
 
       if($id_user=="0"){
            
+   if(!is_array($this->user_site) or !isset($this->user_site['last_id'])){ return false; }
    $id_user=$this->user_site['last_id'];
   
    }
@@ -174,6 +176,12 @@ NoiCore::user()->update(array($field=>$value),$id_user,'$inc');
 NoiCore::user()->update(array($field=>$value),$id_user,'$inc');
    }
    public function update($array,$id_user=0,$modifier='$set'){
+    static $running = false;
+    if ($running) {
+        return false;
+    }
+    $running = true;
+
    
      if($id_user==0){
      if($this->isLogin()==true){
@@ -187,23 +195,25 @@ NoiCore::user()->update(array($field=>$value),$id_user,'$inc');
     $result_site=  NoiCore::app()->get();
     if(isset($result_site['theme_components']['plugins']['mongogrid_values']['user']['default'][0]['collection']) and strlen($result_site['theme_components']['plugins']['mongogrid_values']['user']['default'][0]['collection'])>0){
     $result= MGQuery::update($array, $result_site['theme_components']['plugins']['mongogrid_values']['user']['default'][0]['collection'],array('_id'=>new MongoId($id_user),"site_id"=>$this->name_plugin),false,$modifier);
-    $current_user=$this->load($id_user);
+    $current_user=$this->load($id_user, "_id");
 
+    if(!isset($array['last_update_time']) && is_array($current_user) && isset($current_user['_id'])){
     $array_new_update=array();
     $array_new_update['messages.$.user']=$current_user;
-  if(!isset($array['last_update_time'])){
    NoiCore::app()->db()->update($array_new_update,"forum_themes",array('messages.user._id'=>$current_user['_id']));
      NoiCore::app()->db()->update(array('user'=>$current_user),"comments_list",array('user._id'=>$current_user['_id']));
     NoiCore::events()->execute("update_user",array('user'=>$current_user));
   }
 
 
+     $running = false;
      return $result;
       if($id_user==\Yii::$app->session[$this->name_plugin."_user_data"]['user_id']){
       \Yii::$app->params[$this->name_plugin.'_user_'.\Yii::$app->session[$this->name_plugin."_user_data"]['user_id']]=$this->load($id_user);
       }
     }
     }
+    $running = false;
 
 
    }

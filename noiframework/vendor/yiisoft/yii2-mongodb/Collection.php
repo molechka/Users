@@ -8,7 +8,7 @@
 namespace yii\mongodb;
 
 use yii\base\InvalidParamException;
-use yii\base\Object;
+use yii\base\BaseObject;
 use Yii;
 use yii\helpers\ArrayHelper;
 
@@ -67,7 +67,7 @@ use yii\helpers\ArrayHelper;
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 2.0
  */
-class Collection extends Object
+class Collection extends BaseObject
 {
     /**
      * @var \MongoCollection Mongo collection instance.

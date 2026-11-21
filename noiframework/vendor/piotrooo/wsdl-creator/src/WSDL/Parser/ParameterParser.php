@@ -25,7 +25,7 @@ namespace WSDL\Parser;
 
 use Ouzo\Utilities\Arrays as OuzoArrays;
 use WSDL\Types\Arrays;
-use WSDL\Types\Object;
+use WSDL\Types\WsdlObject;
 use WSDL\Types\Simple;
 
 /**
@@ -59,7 +59,7 @@ class ParameterParser
 
         switch ($this->_strategy) {
             case 'object':
-                return new Object($this->getType(), $this->getName(), $this->complexTypes());
+                return new WsdlObject($this->getType(), $this->getName(), $this->complexTypes());
             case 'wrapper':
                 return $this->_createWrapperObject();
             case 'array':
@@ -97,9 +97,9 @@ class ParameterParser
         $wrapper = $this->wrapper();
         $object = null;
         if ($wrapper->getComplexTypes()) {
-            $object = new Object($this->getType(), $this->getName(), $wrapper->getComplexTypes());
+            $object = new WsdlObject($this->getType(), $this->getName(), $wrapper->getComplexTypes());
         }
-        return new Object($this->getType(), $this->getName(), $object);
+        return new WsdlObject($this->getType(), $this->getName(), $object);
     }
 
     private function _createArrayObject()
@@ -107,10 +107,10 @@ class ParameterParser
         $object = null;
         if ($this->_type == 'wrapper') {
             $complex = $this->wrapper()->getComplexTypes();
-            $object = new Object($this->getType(), $this->getName(), $complex);
+            $object = new WsdlObject($this->getType(), $this->getName(), $complex);
         } elseif ($this->isComplex()) {
             $complex = $this->complexTypes();
-            $object = new Object($this->getType(), $this->getName(), $complex);
+            $object = new WsdlObject($this->getType(), $this->getName(), $complex);
         }
         return new Arrays($this->getType(), $this->getName(), $object);
     }

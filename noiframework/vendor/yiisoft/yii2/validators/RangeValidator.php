@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\validators;
@@ -10,6 +10,7 @@ namespace yii\validators;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\helpers\ArrayHelper;
+use yii\helpers\Json;
 
 /**
  * RangeValidator validates that the attribute value is among a list of values.
@@ -27,7 +28,7 @@ class RangeValidator extends Validator
      * @var array|\Traversable|\Closure a list of valid values that the attribute value should be among or an anonymous function that returns
      * such a list. The signature of the anonymous function should be as follows,
      *
-     * ```php
+     * ```
      * function($model, $attribute) {
      *     // compute range
      *     return $range;
@@ -36,27 +37,28 @@ class RangeValidator extends Validator
      */
     public $range;
     /**
-     * @var boolean whether the comparison is strict (both type and value must be the same)
+     * @var bool whether the comparison is strict (both type and value must be the same)
      */
     public $strict = false;
     /**
-     * @var boolean whether to invert the validation logic. Defaults to false. If set to true,
+     * @var bool whether to invert the validation logic. Defaults to false. If set to true,
      * the attribute value should NOT be among the list of values defined via [[range]].
      */
     public $not = false;
     /**
-     * @var boolean whether to allow array type attribute.
+     * @var bool whether to allow array type attribute.
      */
     public $allowArray = false;
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function init()
     {
         parent::init();
-        if (!is_array($this->range)
+        if (
+            !is_array($this->range)
             && !($this->range instanceof \Closure)
             && !($this->range instanceof \Traversable)
         ) {
@@ -68,13 +70,14 @@ class RangeValidator extends Validator
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function validateValue($value)
     {
         $in = false;
 
-        if ($this->allowArray
+        if (
+            $this->allowArray
             && ($value instanceof \Traversable || is_array($value))
             && ArrayHelper::isSubset($value, $this->range, $this->strict)
         ) {
@@ -89,7 +92,7 @@ class RangeValidator extends Validator
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function validateAttribute($model, $attribute)
     {
@@ -100,7 +103,7 @@ class RangeValidator extends Validator
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function clientValidateAttribute($model, $attribute, $view)
     {
@@ -108,6 +111,17 @@ class RangeValidator extends Validator
             $this->range = call_user_func($this->range, $model, $attribute);
         }
 
+        ValidationAsset::register($view);
+        $options = $this->getClientOptions($model, $attribute);
+
+        return 'yii.validation.range(value, messages, ' . Json::htmlEncode($options) . ');';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getClientOptions($model, $attribute)
+    {
         $range = [];
         foreach ($this->range as $value) {
             $range[] = (string) $value;
@@ -115,9 +129,9 @@ class RangeValidator extends Validator
         $options = [
             'range' => $range,
             'not' => $this->not,
-            'message' => Yii::$app->getI18n()->format($this->message, [
+            'message' => $this->formatMessage($this->message, [
                 'attribute' => $model->getAttributeLabel($attribute),
-            ], Yii::$app->language),
+            ]),
         ];
         if ($this->skipOnEmpty) {
             $options['skipOnEmpty'] = 1;
@@ -126,8 +140,6 @@ class RangeValidator extends Validator
             $options['allowArray'] = 1;
         }
 
-        ValidationAsset::register($view);
-
-        return 'yii.validation.range(value, messages, ' . json_encode($options, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');';
+        return $options;
     }
 }

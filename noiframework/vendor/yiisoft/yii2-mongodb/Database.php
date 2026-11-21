@@ -7,7 +7,7 @@
 
 namespace yii\mongodb;
 
-use yii\base\Object;
+use yii\base\BaseObject;
 use Yii;
 use yii\helpers\Json;
 
@@ -20,7 +20,7 @@ use yii\helpers\Json;
  * @author Paul Klimov <klimov.paul@gmail.com>
  * @since 2.0
  */
-class Database extends Object
+class Database extends BaseObject
 {
     /**
      * @var \MongoDB Mongo database instance.

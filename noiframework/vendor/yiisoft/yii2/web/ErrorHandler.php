@@ -1,15 +1,15 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
 
 use Yii;
-use yii\base\Exception;
 use yii\base\ErrorException;
+use yii\base\Exception;
 use yii\base\UserException;
 use yii\helpers\VarDumper;
 
@@ -22,6 +22,8 @@ use yii\helpers\VarDumper;
  * ErrorHandler is configured as an application component in [[\yii\base\Application]] by default.
  * You can access that instance via `Yii::$app->errorHandler`.
  *
+ * For more details and usage information on ErrorHandler, see the [guide article on handling errors](guide:runtime-handling-errors).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Timur Ruziev <resurtm@gmail.com>
  * @since 2.0
@@ -29,17 +31,17 @@ use yii\helpers\VarDumper;
 class ErrorHandler extends \yii\base\ErrorHandler
 {
     /**
-     * @var integer maximum number of source code lines to be displayed. Defaults to 19.
+     * @var int maximum number of source code lines to be displayed. Defaults to 19.
      */
     public $maxSourceLines = 19;
     /**
-     * @var integer maximum number of trace source code lines to be displayed. Defaults to 13.
+     * @var int maximum number of trace source code lines to be displayed. Defaults to 13.
      */
     public $maxTraceSourceLines = 13;
     /**
-     * @var string the route (e.g. 'site/error') to the controller action that will be used
+     * @var string|null the route (e.g. `site/error`) to the controller action that will be used
      * to display external errors. Inside the action, it can retrieve the error information
-     * using `Yii::$app->errorHandler->exception. This property defaults to null, meaning ErrorHandler
+     * using `Yii::$app->errorHandler->exception`. This property defaults to null, meaning ErrorHandler
      * will handle the error display.
      */
     public $errorAction;
@@ -67,11 +69,22 @@ class ErrorHandler extends \yii\base\ErrorHandler
      * @since 2.0.7
      */
     public $displayVars = ['_GET', '_POST', '_FILES', '_COOKIE', '_SESSION'];
+    /**
+     * @var string trace line with placeholders to be be substituted.
+     * The placeholders are {file}, {line} and {text} and the string should be as follows.
+     *
+     * `File: {file} - Line: {line} - Text: {text}`
+     *
+     * @example <a href="ide://open?file={file}&line={line}">{html}</a>
+     * @see https://github.com/yiisoft/yii2-debug#open-files-in-ide
+     * @since 2.0.14
+     */
+    public $traceLine = '{html}';
 
 
     /**
      * Renders the exception.
-     * @param \Exception $exception the exception to be rendered.
+     * @param \Throwable $exception the exception to be rendered.
      */
     protected function renderException($exception)
     {
@@ -87,9 +100,14 @@ class ErrorHandler extends \yii\base\ErrorHandler
             $response = new Response();
         }
 
+        $response->setStatusCodeByException($exception);
+
         $useErrorView = $response->format === Response::FORMAT_HTML && (!YII_DEBUG || $exception instanceof UserException);
 
         if ($useErrorView && $this->errorAction !== null) {
+            /** @var View $view */
+            $view = Yii::$app->view;
+            $view->clear();
             $result = Yii::$app->runAction($this->errorAction);
             if ($result instanceof Response) {
                 $response = $result;
@@ -97,7 +115,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
                 $response->data = $result;
             }
         } elseif ($response->format === Response::FORMAT_HTML) {
-            if (YII_ENV_TEST || isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+            if ($this->shouldRenderSimpleHtml()) {
                 // AJAX request
                 $response->data = '<pre>' . $this->htmlEncode(static::convertExceptionToString($exception)) . '</pre>';
             } else {
@@ -117,18 +135,12 @@ class ErrorHandler extends \yii\base\ErrorHandler
             $response->data = $this->convertExceptionToArray($exception);
         }
 
-        if ($exception instanceof HttpException) {
-            $response->setStatusCode($exception->statusCode);
-        } else {
-            $response->setStatusCode(500);
-        }
-
         $response->send();
     }
 
     /**
      * Converts an exception into an array.
-     * @param \Exception $exception the exception being converted
+     * @param \Throwable $exception the exception being converted
      * @return array the array representation of the exception.
      */
     protected function convertExceptionToArray($exception)
@@ -170,7 +182,7 @@ class ErrorHandler extends \yii\base\ErrorHandler
      */
     public function htmlEncode($text)
     {
-        return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars($text, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
     }
 
     /**
@@ -190,9 +202,24 @@ class ErrorHandler extends \yii\base\ErrorHandler
             $text = $this->htmlEncode($class);
         }
 
-        $url = $this->getTypeUrl($class, $method);
+        $url = null;
 
-        if (!$url) {
+        $shouldGenerateLink = true;
+        if ($method !== null && strpos($method, '{closure') === false) {
+            $reflection = new \ReflectionClass($class);
+            if ($reflection->hasMethod($method)) {
+                $reflectionMethod = $reflection->getMethod($method);
+                $shouldGenerateLink = $reflectionMethod->isPublic() || $reflectionMethod->isProtected();
+            } else {
+                $shouldGenerateLink = false;
+            }
+        }
+
+        if ($shouldGenerateLink) {
+            $url = $this->getTypeUrl($class, $method);
+        }
+
+        if ($url === null) {
             return $text;
         }
 
@@ -208,12 +235,12 @@ class ErrorHandler extends \yii\base\ErrorHandler
      */
     protected function getTypeUrl($class, $method)
     {
-        if (strpos($class, 'yii\\') !== 0) {
+        if (strncmp($class, 'yii\\', 4) !== 0) {
             return null;
         }
 
         $page = $this->htmlEncode(strtolower(str_replace('\\', '-', $class)));
-        $url = "http://www.yiiframework.com/doc-2.0/$page.html";
+        $url = "https://www.yiiframework.com/doc-2.0/$page.html";
         if ($method) {
             $url .= "#$method()-detail";
         }
@@ -231,20 +258,27 @@ class ErrorHandler extends \yii\base\ErrorHandler
     {
         $_params_['handler'] = $this;
         if ($this->exception instanceof ErrorException || !Yii::$app->has('view')) {
+            $_renderer_ = function () {
+                extract(func_get_arg(1), EXTR_OVERWRITE);
+                require Yii::getAlias(func_get_arg(0));
+            };
             ob_start();
             ob_implicit_flush(false);
-            extract($_params_, EXTR_OVERWRITE);
-            require(Yii::getAlias($_file_));
+            call_user_func_array($_renderer_, [$_file_, $_params_]);
 
             return ob_get_clean();
-        } else {
-            return Yii::$app->getView()->renderFile($_file_, $_params_, $this);
         }
+
+        /** @var View $view */
+        $view = Yii::$app->getView();
+        $view->clear();
+
+        return $view->renderFile($_file_, $_params_, $this);
     }
 
     /**
      * Renders the previous exception stack for a given Exception.
-     * @param \Exception $exception the exception whose precursors should be rendered.
+     * @param \Throwable $exception the exception whose precursors should be rendered.
      * @return string HTML content of the rendered previous exceptions.
      * Empty string if there are none.
      */
@@ -252,19 +286,19 @@ class ErrorHandler extends \yii\base\ErrorHandler
     {
         if (($previous = $exception->getPrevious()) !== null) {
             return $this->renderFile($this->previousExceptionView, ['exception' => $previous]);
-        } else {
-            return '';
         }
+
+        return '';
     }
 
     /**
      * Renders a single call stack element.
      * @param string|null $file name where call has happened.
-     * @param integer|null $line number on which call has happened.
+     * @param int|null $line number on which call has happened.
      * @param string|null $class called class name.
      * @param string|null $method called function/method name.
      * @param array $args array of method arguments.
-     * @param integer $index number of the call stack element.
+     * @param int $index number of the call stack element.
      * @return string HTML content of the rendered call stack element.
      */
     public function renderCallStackItem($file, $line, $class, $method, $args, $index)
@@ -297,6 +331,31 @@ class ErrorHandler extends \yii\base\ErrorHandler
     }
 
     /**
+     * Renders call stack.
+     * @param \Throwable $exception exception to get call stack from
+     * @return string HTML content of the rendered call stack.
+     * @since 2.0.12
+     */
+    public function renderCallStack($exception)
+    {
+        $out = '<ul>';
+        $out .= $this->renderCallStackItem($exception->getFile(), $exception->getLine(), null, null, [], 1);
+        for ($i = 0, $trace = $exception->getTrace(), $length = count($trace); $i < $length; ++$i) {
+            $file = !empty($trace[$i]['file']) ? $trace[$i]['file'] : null;
+            $line = !empty($trace[$i]['line']) ? $trace[$i]['line'] : null;
+            $class = !empty($trace[$i]['class']) ? $trace[$i]['class'] : null;
+            $function = null;
+            if (!empty($trace[$i]['function']) && $trace[$i]['function'] !== 'unknown') {
+                $function = $trace[$i]['function'];
+            }
+            $args = !empty($trace[$i]['args']) ? $trace[$i]['args'] : [];
+            $out .= $this->renderCallStackItem($file, $line, $class, $function, $args, $i + 2);
+        }
+        $out .= '</ul>';
+        return $out;
+    }
+
+    /**
      * Renders the global variables of the request.
      * List of global variables is defined in [[displayVars]].
      * @return string the rendering result
@@ -311,13 +370,13 @@ class ErrorHandler extends \yii\base\ErrorHandler
             }
         }
 
-        return '<pre>' . rtrim($request, "\n") . '</pre>';
+        return '<pre>' . $this->htmlEncode(rtrim($request, "\n")) . '</pre>';
     }
 
     /**
      * Determines whether given name of the file belongs to the framework.
      * @param string $file name to be checked.
-     * @return boolean whether given name of the file belongs to the framework.
+     * @return bool whether given name of the file belongs to the framework.
      */
     public function isCoreFile($file)
     {
@@ -326,13 +385,13 @@ class ErrorHandler extends \yii\base\ErrorHandler
 
     /**
      * Creates HTML containing link to the page with the information on given HTTP status code.
-     * @param integer $statusCode to be used to generate information link.
+     * @param int $statusCode to be used to generate information link.
      * @param string $statusDescription Description to display after the the status code.
      * @return string generated HTML with HTTP status code information.
      */
     public function createHttpStatusLink($statusCode, $statusDescription)
     {
-        return '<a href="http://en.wikipedia.org/wiki/List_of_HTTP_status_codes#' . (int) $statusCode . '" target="_blank">HTTP ' . (int) $statusCode . ' &ndash; ' . $statusDescription . '</a>';
+        return '<a href="https://en.wikipedia.org/wiki/List_of_HTTP_status_codes#' . (int) $statusCode . '" target="_blank">HTTP ' . (int) $statusCode . ' &ndash; ' . $statusDescription . '</a>';
     }
 
     /**
@@ -343,12 +402,12 @@ class ErrorHandler extends \yii\base\ErrorHandler
     public function createServerInformationLink()
     {
         $serverUrls = [
-            'http://httpd.apache.org/' => ['apache'],
-            'http://nginx.org/' => ['nginx'],
-            'http://lighttpd.net/' => ['lighttpd'],
+            'https://httpd.apache.org/' => ['apache'],
+            'https://nginx.org/' => ['nginx'],
+            'https://www.lighttpd.net/' => ['lighttpd'],
             'http://gwan.com/' => ['g-wan', 'gwan'],
-            'http://iis.net/' => ['iis', 'services'],
-            'http://php.net/manual/en/features.commandline.webserver.php' => ['development'],
+            'https://www.iis.net/' => ['iis', 'services'],
+            'https://www.php.net/manual/en/features.commandline.webserver.php' => ['development'],
         ];
         if (isset($_SERVER['SERVER_SOFTWARE'])) {
             foreach ($serverUrls as $url => $keywords) {
@@ -370,11 +429,11 @@ class ErrorHandler extends \yii\base\ErrorHandler
      */
     public function createFrameworkVersionLink()
     {
-        return '<a href="http://github.com/yiisoft/yii2/" target="_blank">' . $this->htmlEncode(Yii::getVersion()) . '</a>';
+        return '<a href="https://github.com/yiisoft/yii2/" target="_blank">' . $this->htmlEncode(Yii::getVersion()) . '</a>';
     }
 
     /**
-     * Converts arguments array to its string representation
+     * Converts arguments array to its string representation.
      *
      * @param array $args arguments array to be converted
      * @return string string representation of the arguments array
@@ -386,8 +445,8 @@ class ErrorHandler extends \yii\base\ErrorHandler
 
         foreach ($args as $key => $value) {
             $count++;
-            if ($count>=5) {
-                if ($count>5) {
+            if ($count >= 5) {
+                if ($count > 5) {
                     unset($args[$key]);
                 } else {
                     $args[$key] = '...';
@@ -423,21 +482,30 @@ class ErrorHandler extends \yii\base\ErrorHandler
                 $args[$key] = "<span class=\"number\">$key</span> => $args[$key]";
             }
         }
-        $out = implode(', ', $args);
 
-        return $out;
+        return implode(', ', $args);
     }
 
     /**
-     * Returns human-readable exception name
-     * @param \Exception $exception
-     * @return string human-readable exception name or null if it cannot be determined
+     * Returns human-readable exception name.
+     * @param \Throwable $exception
+     * @return string|null human-readable exception name or null if it cannot be determined
      */
     public function getExceptionName($exception)
     {
         if ($exception instanceof \yii\base\Exception || $exception instanceof \yii\base\InvalidCallException || $exception instanceof \yii\base\InvalidParamException || $exception instanceof \yii\base\UnknownMethodException) {
             return $exception->getName();
         }
+
         return null;
+    }
+
+    /**
+     * @return bool if simple HTML should be rendered
+     * @since 2.0.12
+     */
+    protected function shouldRenderSimpleHtml()
+    {
+        return YII_ENV_TEST || Yii::$app->request->getIsAjax();
     }
 }

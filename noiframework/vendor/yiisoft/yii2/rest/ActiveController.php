@@ -1,14 +1,15 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rest;
 
 use yii\base\InvalidConfigException;
 use yii\base\Model;
+use yii\base\Module;
 use yii\web\ForbiddenHttpException;
 
 /**
@@ -32,8 +33,13 @@ use yii\web\ForbiddenHttpException;
  * You should usually override [[checkAccess()]] to check whether the current user has the privilege to perform
  * the specified action against the specified model.
  *
+ * For more details and usage information on ActiveController, see the [guide article on rest controllers](guide:rest-controllers).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Module = Module
+ * @extends Controller<T>
  */
 class ActiveController extends Controller
 {
@@ -54,7 +60,7 @@ class ActiveController extends Controller
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function init()
     {
@@ -65,7 +71,7 @@ class ActiveController extends Controller
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function actions()
     {
@@ -104,7 +110,7 @@ class ActiveController extends Controller
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function verbs()
     {
@@ -125,7 +131,7 @@ class ActiveController extends Controller
      * If the user does not have access, a [[ForbiddenHttpException]] should be thrown.
      *
      * @param string $action the ID of the action to be executed
-     * @param object $model the model to be accessed. If null, it means no specific model is being accessed.
+     * @param object|null $model the model to be accessed. If null, it means no specific model is being accessed.
      * @param array $params additional parameters
      * @throws ForbiddenHttpException if the user does not have access
      */

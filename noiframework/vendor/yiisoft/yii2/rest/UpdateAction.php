@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rest;
@@ -15,8 +15,13 @@ use yii\web\ServerErrorHttpException;
 /**
  * UpdateAction implements the API endpoint for updating a model.
  *
+ * For more details and usage information on UpdateAction, see the [guide article on rest controllers](guide:rest-controllers).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Controller = Controller
+ * @extends Action<T>
  */
 class UpdateAction extends Action
 {
@@ -34,7 +39,7 @@ class UpdateAction extends Action
      */
     public function run($id)
     {
-        /* @var $model ActiveRecord */
+        /** @var ActiveRecord $model */
         $model = $this->findModel($id);
 
         if ($this->checkAccess) {

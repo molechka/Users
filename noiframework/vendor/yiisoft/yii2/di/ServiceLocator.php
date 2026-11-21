@@ -1,19 +1,19 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\di;
 
-use Yii;
 use Closure;
+use Yii;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
 
 /**
- * ServiceLocator implements a [service locator](http://en.wikipedia.org/wiki/Service_locator_pattern).
+ * ServiceLocator implements a [service locator](https://en.wikipedia.org/wiki/Service_locator_pattern).
  *
  * To use ServiceLocator, you first need to register component IDs with the corresponding component
  * definitions with the locator by calling [[set()]] or [[setComponents()]].
@@ -22,7 +22,7 @@ use yii\base\InvalidConfigException;
  *
  * For example,
  *
- * ```php
+ * ```
  * $locator = new \yii\di\ServiceLocator;
  * $locator->setComponents([
  *     'db' => [
@@ -40,6 +40,9 @@ use yii\base\InvalidConfigException;
  * ```
  *
  * Because [[\yii\base\Module]] extends from ServiceLocator, modules and the application are all service locators.
+ * Modules add [tree traversal](guide:concept-service-locator#tree-traversal) for service resolution.
+ *
+ * For more details and usage information on ServiceLocator, see the [guide article on service locators](guide:concept-service-locator).
  *
  * @property array $components The list of the component definitions or the loaded component instances (ID =>
  * definition or instance).
@@ -69,24 +72,24 @@ class ServiceLocator extends Component
     {
         if ($this->has($name)) {
             return $this->get($name);
-        } else {
-            return parent::__get($name);
         }
+
+        return parent::__get($name);
     }
 
     /**
      * Checks if a property value is null.
      * This method overrides the parent implementation by checking if the named component is loaded.
      * @param string $name the property name or the event name
-     * @return boolean whether the property value is null
+     * @return bool whether the property value is null
      */
     public function __isset($name)
     {
-        if ($this->has($name, true)) {
+        if ($this->has($name)) {
             return true;
-        } else {
-            return parent::__isset($name);
         }
+
+        return parent::__isset($name);
     }
 
     /**
@@ -99,8 +102,8 @@ class ServiceLocator extends Component
      *   instantiated the specified component.
      *
      * @param string $id component ID (e.g. `db`).
-     * @param boolean $checkInstance whether the method should check if the component is shared and instantiated.
-     * @return boolean whether the locator has the specified component definition or has instantiated the component.
+     * @param bool $checkInstance whether the method should check if the component is shared and instantiated.
+     * @return bool whether the locator has the specified component definition or has instantiated the component.
      * @see set()
      */
     public function has($id, $checkInstance = false)
@@ -112,8 +115,8 @@ class ServiceLocator extends Component
      * Returns the component instance with the specified ID.
      *
      * @param string $id component ID (e.g. `db`).
-     * @param boolean $throwException whether to throw an exception if `$id` is not registered with the locator before.
-     * @return object|null the component of the specified ID. If `$throwException` is false and `$id`
+     * @param bool $throwException whether to throw an exception if `$id` is not registered with the locator before.
+     * @return ($throwException is true ? object : object|null) the component of the specified ID. If `$throwException` is false and `$id`
      * is not registered before, null will be returned.
      * @throws InvalidConfigException if `$id` refers to a nonexistent component ID
      * @see has()
@@ -129,14 +132,14 @@ class ServiceLocator extends Component
             $definition = $this->_definitions[$id];
             if (is_object($definition) && !$definition instanceof Closure) {
                 return $this->_components[$id] = $definition;
-            } else {
-                return $this->_components[$id] = Yii::createObject($definition);
             }
+
+            return $this->_components[$id] = Yii::createObject($definition);
         } elseif ($throwException) {
             throw new InvalidConfigException("Unknown component ID: $id");
-        } else {
-            return null;
         }
+
+        return null;
     }
 
     /**
@@ -144,7 +147,7 @@ class ServiceLocator extends Component
      *
      * For example,
      *
-     * ```php
+     * ```
      * // a class name
      * $locator->set('cache', 'yii\caching\FileCache');
      *
@@ -184,19 +187,23 @@ class ServiceLocator extends Component
      */
     public function set($id, $definition)
     {
+        unset($this->_components[$id]);
+
         if ($definition === null) {
-            unset($this->_components[$id], $this->_definitions[$id]);
+            unset($this->_definitions[$id]);
             return;
         }
-
-        unset($this->_components[$id]);
 
         if (is_object($definition) || is_callable($definition, true)) {
             // an object, a class name, or a PHP callable
             $this->_definitions[$id] = $definition;
         } elseif (is_array($definition)) {
             // a configuration array
-            if (isset($definition['class'])) {
+            if (isset($definition['__class'])) {
+                $this->_definitions[$id] = $definition;
+                $this->_definitions[$id]['class'] = $definition['__class'];
+                unset($this->_definitions[$id]['__class']);
+            } elseif (isset($definition['class'])) {
                 $this->_definitions[$id] = $definition;
             } else {
                 throw new InvalidConfigException("The configuration for the \"$id\" component must contain a \"class\" element.");
@@ -217,7 +224,7 @@ class ServiceLocator extends Component
 
     /**
      * Returns the list of the component definitions or the loaded component instances.
-     * @param boolean $returnDefinitions whether to return component definitions instead of the loaded component instances.
+     * @param bool $returnDefinitions whether to return component definitions instead of the loaded component instances.
      * @return array the list of the component definitions or the loaded component instances (ID => definition or instance).
      */
     public function getComponents($returnDefinitions = true)
@@ -237,7 +244,7 @@ class ServiceLocator extends Component
      *
      * The following is an example for registering two component definitions:
      *
-     * ```php
+     * ```
      * [
      *     'db' => [
      *         'class' => 'yii\db\Connection',

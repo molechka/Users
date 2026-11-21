@@ -5,7 +5,7 @@ namespace noicms\admin\components;
  * It contains the authentication method that checks if the provided
  * data can identity the user.
  */
-class AdminIdentify extends \yii\base\Object implements \yii\web\IdentityInterface
+class AdminIdentify extends \yii\base\BaseObject implements \yii\web\IdentityInterface
 {
 	private $_id;
         public $id_house;

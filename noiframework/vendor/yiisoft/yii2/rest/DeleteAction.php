@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rest;
@@ -13,8 +13,13 @@ use yii\web\ServerErrorHttpException;
 /**
  * DeleteAction implements the API endpoint for deleting a model.
  *
+ * For more details and usage information on DeleteAction, see the [guide article on rest controllers](guide:rest-controllers).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Controller = Controller
+ * @extends Action<T>
  */
 class DeleteAction extends Action
 {

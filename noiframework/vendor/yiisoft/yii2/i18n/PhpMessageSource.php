@@ -1,13 +1,14 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\i18n;
 
 use Yii;
+use yii\base\InvalidArgumentException;
 
 /**
  * PhpMessageSource represents a message source that stores translated messages in PHP scripts.
@@ -16,10 +17,10 @@ use Yii;
  *
  * - Each PHP script contains one array which stores the message translations in one particular
  *   language and for a single message category;
- * - Each PHP script is saved as a file named as `[[basePath]]/LanguageID/CategoryName.php`;
+ * - Each PHP script is saved as a file named as "[[basePath]]/LanguageID/CategoryName.php";
  * - Within each PHP script, the message translations are returned as an array like the following:
  *
- * ```php
+ * ```
  * return [
  *     'original message 1' => 'translated message 1',
  *     'original message 2' => 'translated message 2',
@@ -41,7 +42,7 @@ class PhpMessageSource extends MessageSource
      * @var array mapping between message categories and the corresponding message file paths.
      * The file paths are relative to [[basePath]]. For example,
      *
-     * ```php
+     * ```
      * [
      *     'core' => 'core.php',
      *     'ext' => 'extensions.php',
@@ -71,17 +72,15 @@ class PhpMessageSource extends MessageSource
         $messageFile = $this->getMessageFilePath($category, $language);
         $messages = $this->loadMessagesFromFile($messageFile);
 
-        $fallbackLanguage = substr($language, 0, 2);
+        $fallbackLanguage = substr((string)$language, 0, 2);
         $fallbackSourceLanguage = substr($this->sourceLanguage, 0, 2);
 
-        if ($language !== $fallbackLanguage) {
+        if ($fallbackLanguage !== '' && $language !== $fallbackLanguage) {
             $messages = $this->loadFallbackMessages($category, $fallbackLanguage, $messages, $messageFile);
-        } elseif ($language === $fallbackSourceLanguage) {
+        } elseif ($fallbackSourceLanguage !== '' && $language === $fallbackSourceLanguage) {
             $messages = $this->loadFallbackMessages($category, $this->sourceLanguage, $messages, $messageFile);
-        } else {
-            if ($messages === null) {
-                Yii::error("The message file for category '$category' does not exist: $messageFile", __METHOD__);
-            }
+        } elseif ($messages === null) {
+            Yii::warning("The message file for category '$category' does not exist: $messageFile", __METHOD__);
         }
 
         return (array) $messages;
@@ -105,7 +104,11 @@ class PhpMessageSource extends MessageSource
         $fallbackMessageFile = $this->getMessageFilePath($category, $fallbackLanguage);
         $fallbackMessages = $this->loadMessagesFromFile($fallbackMessageFile);
 
-        if ($messages === null && $fallbackMessages === null && $fallbackLanguage !== $this->sourceLanguage) {
+        if (
+            $messages === null && $fallbackMessages === null
+            && $fallbackLanguage !== $this->sourceLanguage
+            && strpos($this->sourceLanguage, $fallbackLanguage) !== 0
+        ) {
             Yii::error("The message file for category '$category' does not exist: $originalMessageFile "
                 . "Fallback file does not exist as well: $fallbackMessageFile", __METHOD__);
         } elseif (empty($messages)) {
@@ -113,7 +116,7 @@ class PhpMessageSource extends MessageSource
         } elseif (!empty($fallbackMessages)) {
             foreach ($fallbackMessages as $key => $value) {
                 if (!empty($value) && empty($messages[$key])) {
-                    $messages[$key] = $fallbackMessages[$key];
+                    $messages[$key] = $value;
                 }
             }
         }
@@ -130,6 +133,10 @@ class PhpMessageSource extends MessageSource
      */
     protected function getMessageFilePath($category, $language)
     {
+        $language = (string) $language;
+        if ($language !== '' && !preg_match('/^[a-z0-9_-]+$/i', $language)) {
+            throw new InvalidArgumentException(sprintf('Invalid language code: "%s".', $language));
+        }
         $messageFile = Yii::getAlias($this->basePath) . "/$language/";
         if (isset($this->fileMap[$category])) {
             $messageFile .= $this->fileMap[$category];
@@ -149,14 +156,14 @@ class PhpMessageSource extends MessageSource
     protected function loadMessagesFromFile($messageFile)
     {
         if (is_file($messageFile)) {
-            $messages = include($messageFile);
+            $messages = include $messageFile;
             if (!is_array($messages)) {
                 $messages = [];
             }
 
             return $messages;
-        } else {
-            return null;
         }
+
+        return null;
     }
 }

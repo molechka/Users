@@ -92,7 +92,9 @@ $i++;
  }
   if(in_array($_POST[''.$this->getNameField()],$this->id_data)){
     $key_val=array_search($_POST[''.$this->getNameField()], $this->id_data);
-    $mg->fields->row[$this->field_name."_title"]=$this->data[$key_val]['title'];
+    if (is_object($mg) && isset($mg->fields) && is_object($mg->fields)) {
+        $mg->fields->row[$this->field_name."_title"]=$this->data[$key_val]['title'];
+    }
     return $_POST[$this->getNameField()];
   }
   if($this->opt['required']==true){

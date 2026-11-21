@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
@@ -15,8 +15,13 @@ use Yii;
  * The name of the controller method is available via [[actionMethod]] which
  * is set by the [[controller]] who creates this action.
  *
+ * For more details and usage information on InlineAction, see the [guide article on actions](guide:structure-controllers).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Controller = Controller
+ * @extends Action<T>
  */
 class InlineAction extends Action
 {
@@ -28,9 +33,9 @@ class InlineAction extends Action
 
     /**
      * @param string $id the ID of this action
-     * @param Controller $controller the controller that owns this action
+     * @param T $controller the controller that owns this action
      * @param string $actionMethod the controller method that this inline action is associated with
-     * @param array $config name-value pairs that will be used to initialize the object properties
+     * @param array<string, mixed> $config name-value pairs that will be used to initialize the object properties
      */
     public function __construct($id, $controller, $actionMethod, $config = [])
     {
@@ -47,7 +52,7 @@ class InlineAction extends Action
     public function runWithParams($params)
     {
         $args = $this->controller->bindActionParams($this, $params);
-        Yii::trace('Running action: ' . get_class($this->controller) . '::' . $this->actionMethod . '()', __METHOD__);
+        Yii::debug('Running action: ' . get_class($this->controller) . '::' . $this->actionMethod . '()', __METHOD__);
         if (Yii::$app->requestedParams === null) {
             Yii::$app->requestedParams = $args;
         }

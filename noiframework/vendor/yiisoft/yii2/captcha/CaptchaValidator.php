@@ -1,16 +1,18 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\captcha;
 
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\helpers\Json;
 use yii\validators\ValidationAsset;
 use yii\validators\Validator;
+use yii\web\Controller;
 
 /**
  * CaptchaValidator validates that the attribute value is the same as the verification code displayed in the CAPTCHA.
@@ -27,11 +29,11 @@ use yii\validators\Validator;
 class CaptchaValidator extends Validator
 {
     /**
-     * @var boolean whether to skip this validator if the input is empty.
+     * @var bool whether to skip this validator if the input is empty.
      */
     public $skipOnEmpty = false;
     /**
-     * @var boolean whether the comparison is case sensitive. Defaults to false.
+     * @var bool whether the comparison is case sensitive. Defaults to false.
      */
     public $caseSensitive = false;
     /**
@@ -41,7 +43,7 @@ class CaptchaValidator extends Validator
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function init()
     {
@@ -52,7 +54,7 @@ class CaptchaValidator extends Validator
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function validateValue($value)
     {
@@ -64,15 +66,16 @@ class CaptchaValidator extends Validator
 
     /**
      * Creates the CAPTCHA action object from the route specified by [[captchaAction]].
-     * @return \yii\captcha\CaptchaAction the action object
+     * @return CaptchaAction the action object
      * @throws InvalidConfigException
      */
     public function createCaptchaAction()
     {
         $ca = Yii::$app->createController($this->captchaAction);
         if ($ca !== false) {
-            /* @var $controller \yii\base\Controller */
+            /** @var Controller $controller */
             list($controller, $actionID) = $ca;
+            /** @var CaptchaAction|null $action */
             $action = $controller->createAction($actionID);
             if ($action !== null) {
                 return $action;
@@ -82,9 +85,20 @@ class CaptchaValidator extends Validator
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
-    public function clientValidateAttribute($object, $attribute, $view)
+    public function clientValidateAttribute($model, $attribute, $view)
+    {
+        ValidationAsset::register($view);
+        $options = $this->getClientOptions($model, $attribute);
+
+        return 'yii.validation.captcha(value, messages, ' . Json::htmlEncode($options) . ');';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getClientOptions($model, $attribute)
     {
         $captcha = $this->createCaptchaAction();
         $code = $captcha->getVerifyCode(false);
@@ -94,15 +108,13 @@ class CaptchaValidator extends Validator
             'hashKey' => 'yiiCaptcha/' . $captcha->getUniqueId(),
             'caseSensitive' => $this->caseSensitive,
             'message' => Yii::$app->getI18n()->format($this->message, [
-                'attribute' => $object->getAttributeLabel($attribute),
+                'attribute' => $model->getAttributeLabel($attribute),
             ], Yii::$app->language),
         ];
         if ($this->skipOnEmpty) {
             $options['skipOnEmpty'] = 1;
         }
 
-        ValidationAsset::register($view);
-
-        return 'yii.validation.captcha(value, messages, ' . json_encode($options, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . ');';
+        return $options;
     }
 }

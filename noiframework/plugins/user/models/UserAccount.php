@@ -291,8 +291,10 @@ class UserAccount {
             NoiCore::app()->setSession("user_id", $result['_id']->__toString());
             NoiCore::app()->setSession("user_result", $result);
             NoiCore::app()->redirect($main_conf[0]['after_login']);
+            exit;
         } else {
             NoiCore::app()->redirect($main_conf[0]['after_register']);
+            exit;
         }
     }
 

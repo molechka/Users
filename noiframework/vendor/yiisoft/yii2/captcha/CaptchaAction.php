@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\captcha;
@@ -11,13 +11,14 @@ use Yii;
 use yii\base\Action;
 use yii\base\InvalidConfigException;
 use yii\helpers\Url;
+use yii\web\Controller;
 use yii\web\Response;
 
 /**
  * CaptchaAction renders a CAPTCHA image.
  *
  * CaptchaAction is used together with [[Captcha]] and [[\yii\captcha\CaptchaValidator]]
- * to provide the [CAPTCHA](http://en.wikipedia.org/wiki/Captcha) feature.
+ * to provide the [CAPTCHA](https://en.wikipedia.org/wiki/CAPTCHA) feature.
  *
  * By configuring the properties of CaptchaAction, you may customize the appearance of
  * the generated CAPTCHA images, such as the font color, the background color, etc.
@@ -31,67 +32,69 @@ use yii\web\Response;
  *    to be validated by the 'captcha' validator.
  * 3. In the controller view, insert a [[Captcha]] widget in the form.
  *
- * @property string $verifyCode The verification code. This property is read-only.
+ * @property-read string $verifyCode The verification code.
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Controller = Controller
+ * @extends Action<T>
  */
 class CaptchaAction extends Action
 {
     /**
      * The name of the GET parameter indicating whether the CAPTCHA image should be regenerated.
      */
-    const REFRESH_GET_VAR = 'refresh';
-
+    public const REFRESH_GET_VAR = 'refresh';
     /**
-     * @var integer how many times should the same CAPTCHA be displayed. Defaults to 3.
+     * @var int how many times should the same CAPTCHA be displayed. Defaults to 3.
      * A value less than or equal to 0 means the test is unlimited (available since version 1.1.2).
      */
     public $testLimit = 3;
     /**
-     * @var integer the width of the generated CAPTCHA image. Defaults to 120.
+     * @var int the width of the generated CAPTCHA image. Defaults to 120.
      */
     public $width = 120;
     /**
-     * @var integer the height of the generated CAPTCHA image. Defaults to 50.
+     * @var int the height of the generated CAPTCHA image. Defaults to 50.
      */
     public $height = 50;
     /**
-     * @var integer padding around the text. Defaults to 2.
+     * @var int padding around the text. Defaults to 2.
      */
     public $padding = 2;
     /**
-     * @var integer the background color. For example, 0x55FF00.
+     * @var int the background color. For example, 0x55FF00.
      * Defaults to 0xFFFFFF, meaning white color.
      */
     public $backColor = 0xFFFFFF;
     /**
-     * @var integer the font color. For example, 0x55FF00. Defaults to 0x2040A0 (blue color).
+     * @var int the font color. For example, 0x55FF00. Defaults to 0x2040A0 (blue color).
      */
     public $foreColor = 0x2040A0;
     /**
-     * @var boolean whether to use transparent background. Defaults to false.
+     * @var bool whether to use transparent background. Defaults to false.
      */
     public $transparent = false;
     /**
-     * @var integer the minimum length for randomly generated word. Defaults to 6.
+     * @var int the minimum length for randomly generated word. Defaults to 6.
      */
     public $minLength = 6;
     /**
-     * @var integer the maximum length for randomly generated word. Defaults to 7.
+     * @var int the maximum length for randomly generated word. Defaults to 7.
      */
     public $maxLength = 7;
     /**
-     * @var integer the offset between characters. Defaults to -2. You can adjust this property
+     * @var int the offset between characters. Defaults to -2. You can adjust this property
      * in order to decrease or increase the readability of the captcha.
      */
     public $offset = -2;
     /**
-     * @var string the TrueType font file. This can be either a file path or path alias.
+     * @var string the TrueType font file. This can be either a file path or [path alias](guide:concept-aliases).
      */
     public $fontFile = '@yii/captcha/SpicyRice.ttf';
     /**
-     * @var string the fixed verification code. When this property is set,
+     * @var string|null the fixed verification code. When this property is set,
      * [[getVerifyCode()]] will always return the value of this property.
      * This is mainly used in automated tests where we want to be able to reproduce
      * the same verification code each time we run the tests.
@@ -99,7 +102,7 @@ class CaptchaAction extends Action
      */
     public $fixedVerifyCode;
     /**
-     * @var string the rendering library to use. Currently supported only 'gd' and 'imagick'.
+     * @var string|null the rendering library to use. Currently supported only 'gd' and 'imagick'.
      * If not set, library will be determined automatically.
      * @since 2.0.7
      */
@@ -132,24 +135,25 @@ class CaptchaAction extends Action
                 'hash2' => $this->generateValidationHash(strtolower($code)),
                 // we add a random 'v' parameter so that FireFox can refresh the image
                 // when src attribute of image tag is changed
-                'url' => Url::to([$this->id, 'v' => uniqid()]),
+                'url' => Url::to([$this->id, 'v' => uniqid('', true)]),
             ];
-        } else {
-            $this->setHttpHeaders();
-            Yii::$app->response->format = Response::FORMAT_RAW;
-            return $this->renderImage($this->getVerifyCode());
         }
+
+        $this->setHttpHeaders();
+        Yii::$app->response->format = Response::FORMAT_RAW;
+
+        return $this->renderImage($this->getVerifyCode());
     }
 
     /**
-     * Generates a hash code that can be used for client side validation.
+     * Generates a hash code that can be used for client-side validation.
      * @param string $code the CAPTCHA code
      * @return string a hash code generated from the CAPTCHA code
      */
     public function generateValidationHash($code)
     {
         for ($h = 0, $i = strlen($code) - 1; $i >= 0; --$i) {
-            $h += ord($code[$i]);
+            $h += ord($code[$i]) << $i;
         }
 
         return $h;
@@ -157,7 +161,7 @@ class CaptchaAction extends Action
 
     /**
      * Gets the verification code.
-     * @param boolean $regenerate whether the verification code should be regenerated.
+     * @param bool $regenerate whether the verification code should be regenerated.
      * @return string the verification code.
      */
     public function getVerifyCode($regenerate = false)
@@ -180,8 +184,8 @@ class CaptchaAction extends Action
     /**
      * Validates the input to see if it matches the generated code.
      * @param string $input user input
-     * @param boolean $caseSensitive whether the comparison should be case-sensitive
-     * @return boolean whether the input is valid
+     * @param bool $caseSensitive whether the comparison should be case-sensitive
+     * @return bool whether the input is valid
      */
     public function validate($input, $caseSensitive)
     {
@@ -190,7 +194,7 @@ class CaptchaAction extends Action
         $session = Yii::$app->getSession();
         $session->open();
         $name = $this->getSessionKey() . 'count';
-        $session[$name] = $session[$name] + 1;
+        $session[$name] += 1;
         if ($valid || $session[$name] > $this->testLimit && $this->testLimit > 0) {
             $this->getVerifyCode(true);
         }
@@ -213,16 +217,17 @@ class CaptchaAction extends Action
         if ($this->maxLength > 20) {
             $this->maxLength = 20;
         }
-        $length = mt_rand($this->minLength, $this->maxLength);
+
+        $length = random_int($this->minLength, $this->maxLength);
 
         $letters = 'bcdfghjklmnpqrstvwxyz';
         $vowels = 'aeiou';
         $code = '';
         for ($i = 0; $i < $length; ++$i) {
-            if ($i % 2 && mt_rand(0, 10) > 2 || !($i % 2) && mt_rand(0, 10) > 9) {
-                $code .= $vowels[mt_rand(0, 4)];
+            if ($i % 2 && random_int(0, 10) > 2 || !($i % 2) && random_int(0, 10) > 9) {
+                $code .= $vowels[random_int(0, 4)];
             } else {
-                $code .= $letters[mt_rand(0, 20)];
+                $code .= $letters[random_int(0, 20)];
             }
         }
 
@@ -255,9 +260,9 @@ class CaptchaAction extends Action
             return $this->renderImageByGD($code);
         } elseif ($imageLibrary === 'imagick') {
             return $this->renderImageByImagick($code);
-        } else {
-            throw new InvalidConfigException("Defined library '{$imageLibrary}' is not supported");
         }
+
+        throw new InvalidConfigException("Defined library '{$imageLibrary}' is not supported");
     }
 
     /**
@@ -297,8 +302,8 @@ class CaptchaAction extends Action
         $x = 10;
         $y = round($this->height * 27 / 40);
         for ($i = 0; $i < $length; ++$i) {
-            $fontSize = (int) (rand(26, 32) * $scale * 0.8);
-            $angle = rand(-10, 10);
+            $fontSize = (int) (random_int(26, 32) * $scale * 0.8);
+            $angle = random_int(-10, 10);
             $letter = $code[$i];
             $box = imagettftext($image, $fontSize, $angle, $x, $y, $foreColor, $this->fontFile, $letter);
             $x = $box[2] + $this->offset;
@@ -308,7 +313,11 @@ class CaptchaAction extends Action
 
         ob_start();
         imagepng($image);
-        imagedestroy($image);
+
+        // Function `imagedestroy` is deprecated since PHP `8.5`, as it has no effect since PHP `8.0`
+        if (PHP_VERSION_ID < 80000) {
+            imagedestroy($image);
+        }
 
         return ob_get_clean();
     }
@@ -340,9 +349,9 @@ class CaptchaAction extends Action
         for ($i = 0; $i < $length; ++$i) {
             $draw = new \ImagickDraw();
             $draw->setFont($this->fontFile);
-            $draw->setFontSize((int) (rand(26, 32) * $scale * 0.8));
+            $draw->setFontSize((int) (random_int(26, 32) * $scale * 0.8));
             $draw->setFillColor($foreColor);
-            $image->annotateImage($draw, $x, $y, rand(-10, 10), $code[$i]);
+            $image->annotateImage($draw, $x, $y, random_int(-10, 10), $code[$i]);
             $fontMetrics = $image->queryFontMetrics($draw, $code[$i]);
             $x += (int) $fontMetrics['textWidth'] + $this->offset;
         }

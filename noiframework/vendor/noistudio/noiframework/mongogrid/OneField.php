@@ -4,7 +4,7 @@ namespace noicms\mongogrid;
 use noicms\mongogrid\system_core\GridOperation;
 class OneField{
     public $field_start_name;
-    public $plugins;
+    public $plugins=array();
     public $current_plugin;
     public $operations;
     public $current_name="";

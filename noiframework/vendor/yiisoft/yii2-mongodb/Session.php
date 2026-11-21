@@ -187,4 +187,12 @@ class Session extends MultiFieldSession
 
         return true;
     }
+
+    protected function composeFields($id = null, $data = null)
+    {
+        $fields = parent::composeFields($id, $data);
+        $fields['expire'] = time() + $this->getTimeout();
+        return $fields;
+    }
+
 }

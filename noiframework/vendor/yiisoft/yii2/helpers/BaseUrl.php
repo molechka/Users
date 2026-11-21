@@ -1,14 +1,14 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\helpers;
 
 use Yii;
-use yii\base\InvalidParamException;
+use yii\base\InvalidArgumentException;
 
 /**
  * BaseUrl provides concrete implementation for [[Url]].
@@ -36,7 +36,7 @@ class BaseUrl
      * if you want to specify additional query parameters for the URL being created. The
      * array format must be:
      *
-     * ```php
+     * ```
      * // generates: /index.php?r=site/index&param1=value1&param2=value2
      * ['site/index', 'param1' => 'value1', 'param2' => 'value2']
      * ```
@@ -44,7 +44,7 @@ class BaseUrl
      * If you want to create a URL with an anchor, you can use the array format with a `#` parameter.
      * For example,
      *
-     * ```php
+     * ```
      * // generates: /index.php?r=site/index&param1=value1#name
      * ['site/index', 'param1' => 'value1', '#' => 'name']
      * ```
@@ -64,14 +64,14 @@ class BaseUrl
      *
      * Below are some examples of using this method:
      *
-     * ```php
+     * ```
      * // /index.php?r=site%2Findex
      * echo Url::toRoute('site/index');
      *
      * // /index.php?r=site%2Findex&src=ref1#name
      * echo Url::toRoute(['site/index', 'src' => 'ref1', '#' => 'name']);
      *
-     * // http://www.example.com/index.php?r=site%2Findex
+     * // https://www.example.com/index.php?r=site%2Findex
      * echo Url::toRoute('site/index', true);
      *
      * // https://www.example.com/index.php?r=site%2Findex
@@ -83,25 +83,26 @@ class BaseUrl
      *
      * @param string|array $route use a string to represent a route (e.g. `index`, `site/index`),
      * or an array to represent a route with query parameters (e.g. `['site/index', 'param1' => 'value1']`).
-     * @param boolean|string $scheme the URI scheme to use in the generated URL:
+     * @param bool|string $scheme the URI scheme to use in the generated URL:
      *
      * - `false` (default): generating a relative URL.
-     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::hostInfo]].
-     * - string: generating an absolute URL with the specified scheme (either `http` or `https`).
+     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::$hostInfo]].
+     * - string: generating an absolute URL with the specified scheme (either `http`, `https` or empty string
+     *   for protocol-relative URL).
      *
      * @return string the generated URL
-     * @throws InvalidParamException a relative route is given while there is no active controller
+     * @throws InvalidArgumentException a relative route is given while there is no active controller
      */
     public static function toRoute($route, $scheme = false)
     {
         $route = (array) $route;
         $route[0] = static::normalizeRoute($route[0]);
 
-        if ($scheme) {
+        if ($scheme !== false) {
             return static::getUrlManager()->createAbsoluteUrl($route, is_string($scheme) ? $scheme : null);
-        } else {
-            return static::getUrlManager()->createUrl($route);
         }
+
+        return static::getUrlManager()->createUrl($route);
     }
 
     /**
@@ -121,7 +122,7 @@ class BaseUrl
      *
      * @param string $route the route. This can be either an absolute route or a relative route.
      * @return string normalized route suitable for UrlManager
-     * @throws InvalidParamException a relative route is given while there is no active controller
+     * @throws InvalidArgumentException a relative route is given while there is no active controller
      */
     protected static function normalizeRoute($route)
     {
@@ -133,16 +134,16 @@ class BaseUrl
 
         // relative route
         if (Yii::$app->controller === null) {
-            throw new InvalidParamException("Unable to resolve the relative route: $route. No active controller is available.");
+            throw new InvalidArgumentException("Unable to resolve the relative route: $route. No active controller is available.");
         }
 
         if (strpos($route, '/') === false) {
             // empty or an action ID
             return $route === '' ? Yii::$app->controller->getRoute() : Yii::$app->controller->getUniqueId() . '/' . $route;
-        } else {
-            // relative to module
-            return ltrim(Yii::$app->controller->module->getUniqueId() . '/' . $route, '/');
         }
+
+        // relative to module
+        return ltrim(Yii::$app->controller->module->getUniqueId() . '/' . $route, '/');
     }
 
     /**
@@ -160,13 +161,13 @@ class BaseUrl
      * - an empty string: the currently requested URL will be returned;
      * - a normal string: it will be returned as is.
      *
-     * When `$scheme` is specified (either a string or true), an absolute URL with host info (obtained from
-     * [[\yii\web\UrlManager::hostInfo]]) will be returned. If `$url` is already an absolute URL, its scheme
+     * When `$scheme` is specified (either a string or `true`), an absolute URL with host info (obtained from
+     * [[\yii\web\UrlManager::$hostInfo]]) will be returned. If `$url` is already an absolute URL, its scheme
      * will be replaced with the specified one.
      *
      * Below are some examples of using this method:
      *
-     * ```php
+     * ```
      * // /index.php?r=site%2Findex
      * echo Url::to(['site/index']);
      *
@@ -185,23 +186,27 @@ class BaseUrl
      * // images/logo.gif
      * echo Url::to('images/logo.gif');
      *
-     * // http://www.example.com/images/logo.gif
+     * // https://www.example.com/images/logo.gif
      * echo Url::to('@web/images/logo.gif', true);
      *
      * // https://www.example.com/images/logo.gif
      * echo Url::to('@web/images/logo.gif', 'https');
+     *
+     * // //www.example.com/images/logo.gif
+     * echo Url::to('@web/images/logo.gif', '');
      * ```
      *
      *
      * @param array|string $url the parameter to be used to generate a valid URL
-     * @param boolean|string $scheme the URI scheme to use in the generated URL:
+     * @param bool|string $scheme the URI scheme to use in the generated URL:
      *
      * - `false` (default): generating a relative URL.
-     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::hostInfo]].
-     * - string: generating an absolute URL with the specified scheme (either `http` or `https`).
+     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::$hostInfo]].
+     * - string: generating an absolute URL with the specified scheme (either `http`, `https` or empty string
+     *   for protocol-relative URL).
      *
      * @return string the generated URL
-     * @throws InvalidParamException a relative route is given while there is no active controller
+     * @throws InvalidArgumentException a relative route is given while there is no active controller
      */
     public static function to($url = '', $scheme = false)
     {
@@ -214,23 +219,46 @@ class BaseUrl
             $url = Yii::$app->getRequest()->getUrl();
         }
 
-        if (!$scheme) {
+        if ($scheme === false) {
             return $url;
         }
 
-        if (strncmp($url, '//', 2) === 0) {
-            // e.g. //hostname/path/to/resource
-            return is_string($scheme) ? "$scheme:$url" : $url;
-        }
-
-        if (($pos = strpos($url, ':')) === false || !ctype_alpha(substr($url, 0, $pos))) {
+        if (static::isRelative($url)) {
             // turn relative URL into absolute
             $url = static::getUrlManager()->getHostInfo() . '/' . ltrim($url, '/');
         }
 
-        if (is_string($scheme) && ($pos = strpos($url, ':')) !== false) {
-            // replace the scheme with the specified one
-            $url = $scheme . substr($url, $pos);
+        return static::ensureScheme($url, $scheme);
+    }
+
+    /**
+     * Normalize the URL by ensuring it uses specified scheme.
+     *
+     * If the URL is relative or the scheme is not a string, normalization is skipped.
+     *
+     * @param string $url the URL to process
+     * @param string $scheme the URI scheme used in the URL (e.g. `http` or `https`). Use an empty string to
+     * create protocol-relative URL (e.g. `//example.com/path`)
+     * @return string the processed URL
+     * @since 2.0.11
+     */
+    public static function ensureScheme($url, $scheme)
+    {
+        if (static::isRelative($url) || !is_string($scheme)) {
+            return $url;
+        }
+
+        if (strncmp($url, '//', 2) === 0) {
+            // e.g. //example.com/path/to/resource
+            return $scheme === '' ? $url : "$scheme:$url";
+        }
+
+        if (($pos = strpos($url, '://')) !== false) {
+            if ($scheme === '') {
+                $url = substr($url, $pos + 1);
+            } else {
+                $url = $scheme . substr($url, $pos);
+            }
         }
 
         return $url;
@@ -238,22 +266,22 @@ class BaseUrl
 
     /**
      * Returns the base URL of the current request.
-     * @param boolean|string $scheme the URI scheme to use in the returned base URL:
+     * @param bool|string $scheme the URI scheme to use in the returned base URL:
      *
      * - `false` (default): returning the base URL without host info.
-     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::hostInfo]].
-     * - string: returning an absolute base URL with the specified scheme (either `http` or `https`).
+     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::$hostInfo]].
+     * - string: returning an absolute base URL with the specified scheme (either `http`, `https` or empty string
+     *   for protocol-relative URL).
      * @return string
      */
     public static function base($scheme = false)
     {
         $url = static::getUrlManager()->getBaseUrl();
-        if ($scheme) {
+        if ($scheme !== false) {
             $url = static::getUrlManager()->getHostInfo() . $url;
-            if (is_string($scheme) && ($pos = strpos($url, '://')) !== false) {
-                $url = $scheme . substr($url, $pos);
-            }
+            $url = static::ensureScheme($url, $scheme);
         }
+
         return $url;
     }
 
@@ -262,9 +290,10 @@ class BaseUrl
      *
      * @param string|array $url the URL to remember. Please refer to [[to()]] for acceptable formats.
      * If this parameter is not specified, the currently requested URL will be used.
-     * @param string $name the name associated with the URL to be remembered. This can be used
-     * later by [[previous()]]. If not set, it will use [[\yii\web\User::returnUrlParam]].
+     * @param string|null $name the name associated with the URL to be remembered. This can be used
+     * later by [[previous()]]. If not set, [[\yii\web\User::setReturnUrl()]] will be used with passed URL.
      * @see previous()
+     * @see \yii\web\User::setReturnUrl()
      */
     public static function remember($url = '', $name = null)
     {
@@ -280,27 +309,30 @@ class BaseUrl
     /**
      * Returns the URL previously [[remember()|remembered]].
      *
-     * @param string $name the named associated with the URL that was remembered previously.
-     * If not set, it will use [[\yii\web\User::returnUrlParam]].
-     * @return string the URL previously remembered. Null is returned if no URL was remembered with the given name.
+     * @param string|null $name the named associated with the URL that was remembered previously.
+     * If not set, [[\yii\web\User::getReturnUrl()]] will be used to obtain remembered URL.
+     * @return string|null the URL previously remembered. Null is returned if no URL was remembered with the given name
+     * and `$name` is not specified.
      * @see remember()
+     * @see \yii\web\User::getReturnUrl()
      */
     public static function previous($name = null)
     {
         if ($name === null) {
             return Yii::$app->getUser()->getReturnUrl();
-        } else {
-            return Yii::$app->getSession()->get($name);
         }
+
+        return Yii::$app->getSession()->get($name);
     }
 
     /**
      * Returns the canonical URL of the currently requested page.
+     *
      * The canonical URL is constructed using the current controller's [[\yii\web\Controller::route]] and
      * [[\yii\web\Controller::actionParams]]. You may use the following code in the layout view to add a link tag
      * about canonical URL:
      *
-     * ```php
+     * ```
      * $this->registerLinkTag(['rel' => 'canonical', 'href' => Url::canonical()]);
      * ```
      *
@@ -317,11 +349,12 @@ class BaseUrl
     /**
      * Returns the home URL.
      *
-     * @param boolean|string $scheme the URI scheme to use for the returned URL:
+     * @param bool|string $scheme the URI scheme to use for the returned URL:
      *
      * - `false` (default): returning a relative URL.
-     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::hostInfo]].
-     * - string: returning an absolute URL with the specified scheme (either `http` or `https`).
+     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::$hostInfo]].
+     * - string: returning an absolute URL with the specified scheme (either `http`, `https` or empty string
+     *   for protocol-relative URL).
      *
      * @return string home URL
      */
@@ -329,11 +362,9 @@ class BaseUrl
     {
         $url = Yii::$app->getHomeUrl();
 
-        if ($scheme) {
+        if ($scheme !== false) {
             $url = static::getUrlManager()->getHostInfo() . $url;
-            if (is_string($scheme) && ($pos = strpos($url, '://')) !== false) {
-                $url = $scheme . substr($url, $pos);
-            }
+            $url = static::ensureScheme($url, $scheme);
         }
 
         return $url;
@@ -343,11 +374,11 @@ class BaseUrl
      * Returns a value indicating whether a URL is relative.
      * A relative URL does not have host info part.
      * @param string $url the URL to be checked
-     * @return boolean whether the URL is relative
+     * @return bool whether the URL is relative
      */
     public static function isRelative($url)
     {
-        return strncmp($url, '//', 2) && strpos($url, '://') === false;
+        return preg_match('~^[[:alpha:]][[:alnum:]+-.]*://|^//~', $url) === 0;
     }
 
     /**
@@ -358,7 +389,7 @@ class BaseUrl
      * will be removed from the existing GET parameters; all other parameters specified in `$params` will
      * be merged with the existing GET parameters. For example,
      *
-     * ```php
+     * ```
      * // assume $_GET = ['id' => 123, 'src' => 'google'], current route is "post/view"
      *
      * // /index.php?r=post%2Fview&id=123&src=google
@@ -371,13 +402,25 @@ class BaseUrl
      * echo Url::current(['id' => 100]);
      * ```
      *
+     * Note that if you're replacing array parameters with `[]` at the end you should specify `$params` as nested arrays.
+     * For a `PostSearchForm` model where parameter names are `PostSearchForm[id]` and `PostSearchForm[src]` the syntax
+     * would be the following:
+     *
+     * ```
+     * // index.php?r=post%2Findex&PostSearchForm%5Bid%5D=100&PostSearchForm%5Bsrc%5D=google
+     * echo Url::current([
+     *     $postSearch->formName() => ['id' => 100, 'src' => 'google'],
+     * ]);
+     * ```
+     *
      * @param array $params an associative array of parameters that will be merged with the current GET parameters.
      * If a parameter value is null, the corresponding GET parameter will be removed.
-     * @param boolean|string $scheme the URI scheme to use in the generated URL:
+     * @param bool|string $scheme the URI scheme to use in the generated URL:
      *
      * - `false` (default): generating a relative URL.
-     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::hostInfo]].
-     * - string: generating an absolute URL with the specified scheme (either `http` or `https`).
+     * - `true`: returning an absolute base URL whose scheme is the same as that in [[\yii\web\UrlManager::$hostInfo]].
+     * - string: generating an absolute URL with the specified scheme (either `http`, `https` or empty string
+     *   for protocol-relative URL).
      *
      * @return string the generated URL
      * @since 2.0.3
@@ -386,7 +429,7 @@ class BaseUrl
     {
         $currentParams = Yii::$app->getRequest()->getQueryParams();
         $currentParams[0] = '/' . Yii::$app->controller->getRoute();
-        $route = ArrayHelper::merge($currentParams, $params);
+        $route = array_replace_recursive($currentParams, $params);
         return static::toRoute($route, $scheme);
     }
 

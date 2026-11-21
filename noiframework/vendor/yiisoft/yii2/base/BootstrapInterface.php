@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
@@ -17,7 +17,7 @@ namespace yii\base;
  * The first approach is mainly used by extensions and is managed by the Composer installation process.
  * You mainly need to list the bootstrapping class of your extension in the `composer.json` file like following,
  *
- * ```json
+ * ```
  * {
  *     // ...
  *     "extra": {
@@ -31,7 +31,7 @@ namespace yii\base;
  * The second approach is used by application code which needs to register some code to be run during
  * the bootstrap process. This is done by configuring the [[Application::bootstrap]] property:
  *
- * ```php
+ * ```
  * return [
  *     // ...
  *     'bootstrap' => [
@@ -46,6 +46,8 @@ namespace yii\base;
  * ```
  *
  * As you can see, you can register a bootstrapping class in terms of either a class name or a configuration class.
+ *
+ * For more details and usage information on BootstrapInterface, see the [guide article on bootstrapping applications](guide:structure-applications).
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0

@@ -1,19 +1,19 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rbac;
 
 use Yii;
-use yii\caching\Cache;
-use yii\db\Connection;
-use yii\db\Query;
-use yii\db\Expression;
+use yii\base\InvalidArgumentException;
 use yii\base\InvalidCallException;
-use yii\base\InvalidParamException;
+use yii\caching\CacheInterface;
+use yii\db\Connection;
+use yii\db\Expression;
+use yii\db\Query;
 use yii\di\Instance;
 
 /**
@@ -29,6 +29,8 @@ use yii\di\Instance;
  *
  * You may change the names of the tables used to store the authorization and rule data by setting [[itemTable]],
  * [[itemChildTable]], [[assignmentTable]] and [[ruleTable]].
+ *
+ * For more details and usage information on DbManager, see the [guide article on security authorization](guide:security-authorization).
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Alexander Kochetov <creocoder@gmail.com>
@@ -60,7 +62,7 @@ class DbManager extends BaseManager
      */
     public $ruleTable = '{{%auth_rule}}';
     /**
-     * @var Cache|array|string the cache used to improve RBAC performance. This can be one of the following:
+     * @var CacheInterface|array|string|null the cache used to improve RBAC performance. This can be one of the following:
      *
      * - an application component ID (e.g. `cache`)
      * - a configuration array
@@ -85,19 +87,29 @@ class DbManager extends BaseManager
      * @since 2.0.3
      */
     public $cacheKey = 'rbac';
+    /**
+     * @var string the key used to store user RBAC roles in cache
+     * @since 2.0.48
+     */
+    public $rolesCacheSuffix = 'roles';
 
     /**
-     * @var Item[] all auth items (name => Item)
+     * @var Item[]|null all auth items (name => Item)
      */
     protected $items;
     /**
-     * @var Rule[] all auth rules (name => Rule)
+     * @var Rule[]|null all auth rules (name => Rule)
      */
     protected $rules;
     /**
-     * @var array auth item parent-child relationships (childName => list of parents)
+     * @var array|null auth item parent-child relationships (childName => list of parents)
      */
     protected $parents;
+    /**
+     * @var array user assignments (user id => Assignment[])
+     * @since `protected` since 2.0.38
+     */
+    protected $checkAccessAssignments = [];
 
 
     /**
@@ -109,35 +121,45 @@ class DbManager extends BaseManager
         parent::init();
         $this->db = Instance::ensure($this->db, Connection::className());
         if ($this->cache !== null) {
-            $this->cache = Instance::ensure($this->cache, Cache::className());
+            $this->cache = Instance::ensure($this->cache, 'yii\caching\CacheInterface');
         }
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function checkAccess($userId, $permissionName, $params = [])
     {
-        $assignments = $this->getAssignments($userId);
+        if (isset($this->checkAccessAssignments[(string) $userId])) {
+            $assignments = $this->checkAccessAssignments[(string) $userId];
+        } else {
+            $assignments = $this->getAssignments($userId);
+            $this->checkAccessAssignments[(string) $userId] = $assignments;
+        }
+
+        if ($this->hasNoAssignments($assignments)) {
+            return false;
+        }
+
         $this->loadFromCache();
         if ($this->items !== null) {
             return $this->checkAccessFromCache($userId, $permissionName, $params, $assignments);
-        } else {
-            return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
         }
+
+        return $this->checkAccessRecursive($userId, $permissionName, $params, $assignments);
     }
 
     /**
      * Performs access check for the specified user based on the data loaded from cache.
      * This method is internally called by [[checkAccess()]] when [[cache]] is enabled.
-     * @param string|integer $user the user ID. This should can be either an integer or a string representing
+     * @param string|int $user the user ID. This should can be either an integer or a string representing
      * the unique identifier of a user. See [[\yii\web\User::id]].
      * @param string $itemName the name of the operation that need access check
      * @param array $params name-value pairs that would be passed to rules associated
      * with the tasks and roles assigned to the user. A param with name 'user' is added to this array,
      * which holds the value of `$userId`.
      * @param Assignment[] $assignments the assignments to the specified user
-     * @return boolean whether the operations can be performed by the user.
+     * @return bool whether the operations can be performed by the user.
      * @since 2.0.3
      */
     protected function checkAccessFromCache($user, $itemName, $params, $assignments)
@@ -148,7 +170,7 @@ class DbManager extends BaseManager
 
         $item = $this->items[$itemName];
 
-        Yii::trace($item instanceof Role ? "Checking role: $itemName" : "Checking permission: $itemName", __METHOD__);
+        Yii::debug($item instanceof Role ? "Checking role: $itemName" : "Checking permission: $itemName", __METHOD__);
 
         if (!$this->executeRule($user, $item, $params)) {
             return false;
@@ -172,14 +194,14 @@ class DbManager extends BaseManager
     /**
      * Performs access check for the specified user.
      * This method is internally called by [[checkAccess()]].
-     * @param string|integer $user the user ID. This should can be either an integer or a string representing
+     * @param string|int $user the user ID. This should can be either an integer or a string representing
      * the unique identifier of a user. See [[\yii\web\User::id]].
      * @param string $itemName the name of the operation that need access check
      * @param array $params name-value pairs that would be passed to rules associated
      * with the tasks and roles assigned to the user. A param with name 'user' is added to this array,
      * which holds the value of `$userId`.
      * @param Assignment[] $assignments the assignments to the specified user
-     * @return boolean whether the operations can be performed by the user.
+     * @return bool whether the operations can be performed by the user.
      */
     protected function checkAccessRecursive($user, $itemName, $params, $assignments)
     {
@@ -187,7 +209,7 @@ class DbManager extends BaseManager
             return false;
         }
 
-        Yii::trace($item instanceof Role ? "Checking role: $itemName" : "Checking permission: $itemName", __METHOD__);
+        Yii::debug($item instanceof Role ? "Checking role: $itemName" : "Checking permission: $itemName", __METHOD__);
 
         if (!$this->executeRule($user, $item, $params)) {
             return false;
@@ -197,7 +219,7 @@ class DbManager extends BaseManager
             return true;
         }
 
-        $query = new Query;
+        $query = new Query();
         $parents = $query->select(['parent'])
             ->from($this->itemChildTable)
             ->where(['child' => $itemName])
@@ -212,7 +234,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getItem($name)
     {
@@ -224,16 +246,12 @@ class DbManager extends BaseManager
             return $this->items[$name];
         }
 
-        $row = (new Query)->from($this->itemTable)
+        $row = (new Query())->from($this->itemTable)
             ->where(['name' => $name])
             ->one($this->db);
 
         if ($row === false) {
             return null;
-        }
-
-        if (!isset($row['data']) || ($data = @unserialize($row['data'])) === false) {
-            $row['data'] = null;
         }
 
         return $this->populateItem($row);
@@ -242,7 +260,7 @@ class DbManager extends BaseManager
     /**
      * Returns a value indicating whether the database supports cascading update and delete.
      * The default implementation will return false for SQLite database and true for all other databases.
-     * @return boolean whether the database supports cascading update and delete.
+     * @return bool whether the database supports cascading update and delete.
      */
     protected function supportsCascadeUpdate()
     {
@@ -250,7 +268,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function addItem($item)
     {
@@ -278,13 +296,13 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function removeItem($item)
     {
         if (!$this->supportsCascadeUpdate()) {
             $this->db->createCommand()
-                ->delete($this->itemChildTable, ['or', '[[parent]]=:name', '[[child]]=:name'], [':name' => $item->name])
+                ->delete($this->itemChildTable, ['or', '[[parent]]=:parent', '[[child]]=:child'], [':parent' => $item->name, ':child' => $item->name])
                 ->execute();
             $this->db->createCommand()
                 ->delete($this->assignmentTable, ['item_name' => $item->name])
@@ -301,7 +319,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function updateItem($name, $item)
     {
@@ -336,7 +354,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function addRule($rule)
     {
@@ -361,7 +379,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function updateRule($name, $rule)
     {
@@ -388,7 +406,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function removeRule($rule)
     {
@@ -408,24 +426,26 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getItems($type)
     {
-        $query = (new Query)
+        $query = (new Query())
             ->from($this->itemTable)
             ->where(['type' => $type]);
 
         $items = [];
         foreach ($query->all($this->db) as $row) {
-            $items[$row['name']] = $this->populateItem($row);
+            /** @var Role|Permission $item */
+            $item = $this->populateItem($row);
+            $items[$row['name']] = $item;
         }
 
         return $items;
     }
 
     /**
-     * Populates an auth item with the data fetched from database
+     * Populates an auth item with the data fetched from database.
      * @param array $row the data from the auth item table
      * @return Item the populated auth item instance (either Role or Permission)
      */
@@ -433,7 +453,7 @@ class DbManager extends BaseManager
     {
         $class = $row['type'] == Item::TYPE_PERMISSION ? Permission::className() : Role::className();
 
-        if (!isset($row['data']) || ($data = @unserialize($row['data'])) === false) {
+        if (!isset($row['data']) || ($data = @unserialize(is_resource($row['data']) ? stream_get_contents($row['data']) : $row['data'])) === false) {
             $data = null;
         }
 
@@ -441,7 +461,7 @@ class DbManager extends BaseManager
             'name' => $row['name'],
             'type' => $row['type'],
             'description' => $row['description'],
-            'ruleName' => $row['rule_name'],
+            'ruleName' => $row['rule_name'] ?: null,
             'data' => $data,
             'createdAt' => $row['created_at'],
             'updatedAt' => $row['updated_at'],
@@ -449,29 +469,68 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     * The roles returned by this method include the roles assigned via [[$defaultRoles]].
      */
     public function getRolesByUser($userId)
     {
-        if (!isset($userId) || $userId === '') {
+        if ($this->isEmptyUserId($userId)) {
             return [];
         }
 
-        $query = (new Query)->select('b.*')
+        if ($this->cache !== null) {
+            $data = $this->cache->get($this->getUserRolesCacheKey($userId));
+
+            if ($data !== false) {
+                return $data;
+            }
+        }
+
+        $query = (new Query())->select('b.*')
             ->from(['a' => $this->assignmentTable, 'b' => $this->itemTable])
             ->where('{{a}}.[[item_name]]={{b}}.[[name]]')
             ->andWhere(['a.user_id' => (string) $userId])
             ->andWhere(['b.type' => Item::TYPE_ROLE]);
 
-        $roles = [];
+        $roles = $this->getDefaultRoleInstances();
         foreach ($query->all($this->db) as $row) {
-            $roles[$row['name']] = $this->populateItem($row);
+            /** @var Role $role */
+            $role = $this->populateItem($row);
+            $roles[$row['name']] = $role;
         }
+
+        if ($this->cache !== null) {
+            $this->cacheUserRolesData($userId, $roles);
+        }
+
         return $roles;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
+     */
+    public function getChildRoles($roleName)
+    {
+        $role = $this->getRole($roleName);
+
+        if ($role === null) {
+            throw new InvalidArgumentException("Role \"$roleName\" not found.");
+        }
+
+        $result = [];
+        $this->getChildrenRecursive($roleName, $this->getChildrenList(), $result);
+
+        $roles = [$roleName => $role];
+
+        $roles += array_filter($this->getRoles(), function (Role $roleItem) use ($result) {
+            return array_key_exists($roleItem->name, $result);
+        });
+
+        return $roles;
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function getPermissionsByRole($roleName)
     {
@@ -481,23 +540,26 @@ class DbManager extends BaseManager
         if (empty($result)) {
             return [];
         }
-        $query = (new Query)->from($this->itemTable)->where([
+        $query = (new Query())->from($this->itemTable)->where([
             'type' => Item::TYPE_PERMISSION,
             'name' => array_keys($result),
         ]);
         $permissions = [];
         foreach ($query->all($this->db) as $row) {
-            $permissions[$row['name']] = $this->populateItem($row);
+            /** @var Permission $permission */
+            $permission = $this->populateItem($row);
+            $permissions[$row['name']] = $permission;
         }
+
         return $permissions;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getPermissionsByUser($userId)
     {
-        if (empty($userId)) {
+        if ($this->isEmptyUserId($userId)) {
             return [];
         }
 
@@ -509,13 +571,13 @@ class DbManager extends BaseManager
 
     /**
      * Returns all permissions that are directly assigned to user.
-     * @param string|integer $userId the user ID (see [[\yii\web\User::id]])
+     * @param string|int $userId the user ID (see [[\yii\web\User::id]])
      * @return Permission[] all direct permissions that the user has. The array is indexed by the permission names.
      * @since 2.0.7
      */
     protected function getDirectPermissionsByUser($userId)
     {
-        $query = (new Query)->select('b.*')
+        $query = (new Query())->select('b.*')
             ->from(['a' => $this->assignmentTable, 'b' => $this->itemTable])
             ->where('{{a}}.[[item_name]]={{b}}.[[name]]')
             ->andWhere(['a.user_id' => (string) $userId])
@@ -523,20 +585,23 @@ class DbManager extends BaseManager
 
         $permissions = [];
         foreach ($query->all($this->db) as $row) {
-            $permissions[$row['name']] = $this->populateItem($row);
+            /** @var Permission $permission */
+            $permission = $this->populateItem($row);
+            $permissions[$row['name']] = $permission;
         }
+
         return $permissions;
     }
 
     /**
      * Returns all permissions that the user inherits from the roles assigned to him.
-     * @param string|integer $userId the user ID (see [[\yii\web\User::id]])
+     * @param string|int $userId the user ID (see [[\yii\web\User::id]])
      * @return Permission[] all inherited permissions that the user has. The array is indexed by the permission names.
      * @since 2.0.7
      */
     protected function getInheritedPermissionsByUser($userId)
     {
-        $query = (new Query)->select('item_name')
+        $query = (new Query())->select('item_name')
             ->from($this->assignmentTable)
             ->where(['user_id' => (string) $userId]);
 
@@ -550,14 +615,17 @@ class DbManager extends BaseManager
             return [];
         }
 
-        $query = (new Query)->from($this->itemTable)->where([
+        $query = (new Query())->from($this->itemTable)->where([
             'type' => Item::TYPE_PERMISSION,
             'name' => array_keys($result),
         ]);
         $permissions = [];
         foreach ($query->all($this->db) as $row) {
-            $permissions[$row['name']] = $this->populateItem($row);
+            /** @var Permission $permission */
+            $permission = $this->populateItem($row);
+            $permissions[$row['name']] = $permission;
         }
+
         return $permissions;
     }
 
@@ -568,11 +636,12 @@ class DbManager extends BaseManager
      */
     protected function getChildrenList()
     {
-        $query = (new Query)->from($this->itemChildTable);
+        $query = (new Query())->from($this->itemChildTable);
         $parents = [];
         foreach ($query->all($this->db) as $row) {
             $parents[$row['parent']][] = $row['child'];
         }
+
         return $parents;
     }
 
@@ -593,7 +662,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getRule($name)
     {
@@ -601,15 +670,25 @@ class DbManager extends BaseManager
             return isset($this->rules[$name]) ? $this->rules[$name] : null;
         }
 
-        $row = (new Query)->select(['data'])
+        $row = (new Query())->select(['data'])
             ->from($this->ruleTable)
             ->where(['name' => $name])
             ->one($this->db);
-        return $row === false ? null : unserialize($row['data']);
+        if ($row === false) {
+            return null;
+        }
+        $data = $row['data'];
+        if (is_resource($data)) {
+            $data = stream_get_contents($data);
+        }
+        if (!$data) {
+            return null;
+        }
+        return unserialize($data);
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getRules()
     {
@@ -617,26 +696,32 @@ class DbManager extends BaseManager
             return $this->rules;
         }
 
-        $query = (new Query)->from($this->ruleTable);
+        $query = (new Query())->from($this->ruleTable);
 
         $rules = [];
         foreach ($query->all($this->db) as $row) {
-            $rules[$row['name']] = unserialize($row['data']);
+            $data = $row['data'];
+            if (is_resource($data)) {
+                $data = stream_get_contents($data);
+            }
+            if ($data) {
+                $rules[$row['name']] = unserialize($data);
+            }
         }
 
         return $rules;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getAssignment($roleName, $userId)
     {
-        if (empty($userId)) {
+        if ($this->isEmptyUserId($userId)) {
             return null;
         }
 
-        $row = (new Query)->from($this->assignmentTable)
+        $row = (new Query())->from($this->assignmentTable)
             ->where(['user_id' => (string) $userId, 'item_name' => $roleName])
             ->one($this->db);
 
@@ -652,15 +737,15 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getAssignments($userId)
     {
-        if (empty($userId)) {
+        if ($this->isEmptyUserId($userId)) {
             return [];
         }
 
-        $query = (new Query)
+        $query = (new Query())
             ->from($this->assignmentTable)
             ->where(['user_id' => (string) $userId]);
 
@@ -677,7 +762,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      * @since 2.0.8
      */
     public function canAddChild($parent, $child)
@@ -686,16 +771,16 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function addChild($parent, $child)
     {
         if ($parent->name === $child->name) {
-            throw new InvalidParamException("Cannot add '{$parent->name}' as a child of itself.");
+            throw new InvalidArgumentException("Cannot add '{$parent->name}' as a child of itself.");
         }
 
         if ($parent instanceof Permission && $child instanceof Role) {
-            throw new InvalidParamException('Cannot add a role as a child of a permission.');
+            throw new InvalidArgumentException('Cannot add a role as a child of a permission.');
         }
 
         if ($this->detectLoop($parent, $child)) {
@@ -712,7 +797,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeChild($parent, $child)
     {
@@ -726,7 +811,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeChildren($parent)
     {
@@ -740,22 +825,22 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function hasChild($parent, $child)
     {
-        return (new Query)
+        return (new Query())
             ->from($this->itemChildTable)
             ->where(['parent' => $parent->name, 'child' => $child->name])
             ->one($this->db) !== false;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function getChildren($name)
     {
-        $query = (new Query)
+        $query = (new Query())
             ->select(['name', 'type', 'description', 'rule_name', 'data', 'created_at', 'updated_at'])
             ->from([$this->itemTable, $this->itemChildTable])
             ->where(['parent' => $name, 'name' => new Expression('[[child]]')]);
@@ -772,7 +857,7 @@ class DbManager extends BaseManager
      * Checks whether there is a loop in the authorization item hierarchy.
      * @param Item $parent the parent item
      * @param Item $child the child item to be added to the hierarchy
-     * @return boolean whether a loop exists
+     * @return bool whether a loop exists
      */
     protected function detectLoop($parent, $child)
     {
@@ -784,11 +869,12 @@ class DbManager extends BaseManager
                 return true;
             }
         }
+
         return false;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function assign($role, $userId)
     {
@@ -805,39 +891,53 @@ class DbManager extends BaseManager
                 'created_at' => $assignment->createdAt,
             ])->execute();
 
+        unset($this->checkAccessAssignments[(string) $userId]);
+
+        $this->invalidateCache();
+
         return $assignment;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function revoke($role, $userId)
     {
-        if (empty($userId)) {
+        if ($this->isEmptyUserId($userId)) {
             return false;
         }
 
-        return $this->db->createCommand()
+        unset($this->checkAccessAssignments[(string) $userId]);
+        $result = $this->db->createCommand()
             ->delete($this->assignmentTable, ['user_id' => (string) $userId, 'item_name' => $role->name])
             ->execute() > 0;
+
+        $this->invalidateCache();
+
+        return $result;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function revokeAll($userId)
     {
-        if (empty($userId)) {
+        if ($this->isEmptyUserId($userId)) {
             return false;
         }
 
-        return $this->db->createCommand()
+        unset($this->checkAccessAssignments[(string) $userId]);
+        $result = $this->db->createCommand()
             ->delete($this->assignmentTable, ['user_id' => (string) $userId])
             ->execute() > 0;
+
+        $this->invalidateCache();
+
+        return $result;
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeAll()
     {
@@ -849,7 +949,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeAllPermissions()
     {
@@ -857,7 +957,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeAllRoles()
     {
@@ -866,12 +966,12 @@ class DbManager extends BaseManager
 
     /**
      * Removes all auth items of the specified type.
-     * @param integer $type the auth item type (either Item::TYPE_PERMISSION or Item::TYPE_ROLE)
+     * @param int $type the auth item type (either Item::TYPE_PERMISSION or Item::TYPE_ROLE)
      */
     protected function removeAllItems($type)
     {
         if (!$this->supportsCascadeUpdate()) {
-            $names = (new Query)
+            $names = (new Query())
                 ->select(['name'])
                 ->from($this->itemTable)
                 ->where(['type' => $type])
@@ -895,7 +995,7 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeAllRules()
     {
@@ -911,10 +1011,11 @@ class DbManager extends BaseManager
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function removeAllAssignments()
     {
+        $this->checkAccessAssignments = [];
         $this->db->createCommand()->delete($this->assignmentTable)->execute();
     }
 
@@ -925,34 +1026,51 @@ class DbManager extends BaseManager
             $this->items = null;
             $this->rules = null;
             $this->parents = null;
+
+            $cachedUserIds = $this->cache->get($this->getUserRolesCachedSetKey());
+
+            if ($cachedUserIds !== false) {
+                foreach ($cachedUserIds as $userId) {
+                    $this->cache->delete($this->getUserRolesCacheKey($userId));
+                }
+
+                $this->cache->delete($this->getUserRolesCachedSetKey());
+            }
         }
+        $this->checkAccessAssignments = [];
     }
 
     public function loadFromCache()
     {
-        if ($this->items !== null || !$this->cache instanceof Cache) {
+        if ($this->items !== null || !$this->cache instanceof CacheInterface) {
             return;
         }
 
         $data = $this->cache->get($this->cacheKey);
         if (is_array($data) && isset($data[0], $data[1], $data[2])) {
-            list ($this->items, $this->rules, $this->parents) = $data;
+            list($this->items, $this->rules, $this->parents) = $data;
             return;
         }
 
-        $query = (new Query)->from($this->itemTable);
+        $query = (new Query())->from($this->itemTable);
         $this->items = [];
         foreach ($query->all($this->db) as $row) {
             $this->items[$row['name']] = $this->populateItem($row);
         }
 
-        $query = (new Query)->from($this->ruleTable);
+        $query = (new Query())->from($this->ruleTable);
         $this->rules = [];
         foreach ($query->all($this->db) as $row) {
-            $this->rules[$row['name']] = unserialize($row['data']);
+            $data = $row['data'];
+            if (is_resource($data)) {
+                $data = stream_get_contents($data);
+            }
+            if ($data) {
+                $this->rules[$row['name']] = unserialize($data);
+            }
         }
 
-        $query = (new Query)->from($this->itemChildTable);
+        $query = (new Query())->from($this->itemChildTable);
         $this->parents = [];
         foreach ($query->all($this->db) as $row) {
             if (isset($this->items[$row['child']])) {
@@ -966,7 +1084,7 @@ class DbManager extends BaseManager
     /**
      * Returns all role assignment information for the specified role.
      * @param string $roleName
-     * @return Assignment[] the assignments. An empty array will be
+     * @return string[] the ids. An empty array will be
      * returned if role is not assigned to any user.
      * @since 2.0.7
      */
@@ -976,8 +1094,43 @@ class DbManager extends BaseManager
             return [];
         }
 
-        return (new Query)->select('[[user_id]]')
+        return (new Query())->select('[[user_id]]')
             ->from($this->assignmentTable)
             ->where(['item_name' => $roleName])->column($this->db);
+    }
+
+    /**
+     * Check whether $userId is empty.
+     * @param mixed $userId
+     * @return bool
+     * @since 2.0.26
+     */
+    protected function isEmptyUserId($userId)
+    {
+        return !isset($userId) || $userId === '';
+    }
+
+    private function getUserRolesCacheKey($userId)
+    {
+        return $this->cacheKey . $this->rolesCacheSuffix . $userId;
+    }
+
+    private function getUserRolesCachedSetKey()
+    {
+        return $this->cacheKey . $this->rolesCacheSuffix;
+    }
+
+    private function cacheUserRolesData($userId, $roles)
+    {
+        $cachedUserIds = $this->cache->get($this->getUserRolesCachedSetKey());
+
+        if ($cachedUserIds === false) {
+            $cachedUserIds = [];
+        }
+
+        $cachedUserIds[] = $userId;
+
+        $this->cache->set($this->getUserRolesCacheKey($userId), $roles);
+        $this->cache->set($this->getUserRolesCachedSetKey(), $cachedUserIds);
     }
 }

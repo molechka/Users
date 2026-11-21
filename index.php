@@ -36,12 +36,12 @@ $_SERVER['DOCUMENT_ROOT']=$config['mustbe'];
 }
  
 if(isset($config['debug']) and $config['debug']==true){
- ini_set('display_errors',1);
-error_reporting(E_ALL);
+ ini_set('display_errors',0);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 define('YII_DEBUG', true);   
 }else {
 ini_set('display_errors',0);
-error_reporting(E_NONE);
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
 define('YII_DEBUG', false);   
 }
  
@@ -65,6 +65,7 @@ define("ADMIN_PATH",DOCUMENT_ROOT."/themes/admin/");
 define("PATH_TO_ENGINE",DOCUMENT_ROOT."/".NOIPRODUCT_FOLDER);
 define("DB_TYPE","mongodb");
 
+require '/opt/mongo-adapter/vendor/autoload.php';
 require(__DIR__ . '/'.NOIPRODUCT_FOLDER.'/vendor/autoload.php');
 require(__DIR__ . '/'.NOIPRODUCT_FOLDER.'/vendor/yiisoft/yii2/Yii.php');
 

@@ -1,17 +1,22 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\console\controllers;
 
 use Yii;
+use yii\base\InvalidConfigException;
+use yii\base\InvalidParamException;
+use yii\console\Application;
 use yii\console\Controller;
 use yii\console\Exception;
+use yii\console\ExitCode;
 use yii\helpers\Console;
 use yii\helpers\FileHelper;
+use yii\test\Fixture;
 use yii\test\FixtureTrait;
 
 /**
@@ -28,7 +33,7 @@ use yii\test\FixtureTrait;
  * yii fixture "*"
  *
  * #load all fixtures except User
- * yii fixture "*" -User
+ * yii fixture "*, -User"
  *
  * #load fixtures with different namespace.
  * yii fixture/load User --namespace=alias\my\custom\namespace\goes\here
@@ -38,6 +43,9 @@ use yii\test\FixtureTrait;
  *
  * @author Mark Jebri <mark.github@yandex.ru>
  * @since 2.0
+ *
+ * @template T of Application = Application
+ * @extends Controller<T>
  */
 class FixtureController extends Controller
 {
@@ -56,76 +64,72 @@ class FixtureController extends Controller
      * that disables and enables integrity check, so your data can be safely loaded.
      */
     public $globalFixtures = [
-        'yii\test\InitDb',
+        'yii\test\InitDbFixture',
     ];
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function options($actionID)
     {
         return array_merge(parent::options($actionID), [
-            'namespace', 'globalFixtures'
+            'namespace', 'globalFixtures',
         ]);
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      * @since 2.0.8
      */
     public function optionAliases()
     {
         return array_merge(parent::optionAliases(), [
             'g' => 'globalFixtures',
-            'n' => 'namespace'
+            'n' => 'namespace',
         ]);
     }
 
     /**
      * Loads the specified fixture data.
+     *
      * For example,
      *
      * ```
      * # load the fixture data specified by User and UserProfile.
      * # any existing fixture data will be removed first
-     * yii fixture/load User UserProfile
+     * yii fixture/load "User, UserProfile"
      *
      * # load all available fixtures found under 'tests\unit\fixtures'
      * yii fixture/load "*"
      *
      * # load all fixtures except User and UserProfile
-     * yii fixture/load "*" -User -UserProfile
+     * yii fixture/load "*, -User, -UserProfile"
      * ```
      *
+     * @param array $fixturesInput
+     * @return int return code
      * @throws Exception if the specified fixture does not exist.
      */
-    public function actionLoad()
+    public function actionLoad(array $fixturesInput = [])
     {
-        $fixturesInput = func_get_args();
         if ($fixturesInput === []) {
-            $this->stdout($this->getHelpSummary() . "\n");
-
-            $helpCommand = Console::ansiFormat('yii help fixture', [Console::FG_CYAN]);
-            $this->stdout("Use $helpCommand to get usage info.\n");
-
-            return self::EXIT_CODE_NORMAL;
+            $this->printHelpMessage();
+            return ExitCode::OK;
         }
 
         $filtered = $this->filterFixtures($fixturesInput);
         $except = $filtered['except'];
 
         if (!$this->needToApplyAll($fixturesInput[0])) {
-
             $fixtures = $filtered['apply'];
 
             $foundFixtures = $this->findFixtures($fixtures);
             $notFoundFixtures = array_diff($fixtures, $foundFixtures);
 
-            if ($notFoundFixtures) {
+            if ($notFoundFixtures !== []) {
                 $this->notifyNotFound($notFoundFixtures);
             }
-
         } else {
             $foundFixtures = $this->findFixtures();
         }
@@ -134,18 +138,18 @@ class FixtureController extends Controller
 
         if (!$foundFixtures) {
             throw new Exception(
-                "No files were found by name: \"" . implode(', ', $fixturesInput) . "\".\n" .
-                "Check that files with these name exists, under fixtures path: \n\"" . $this->getFixturePath() . "\"."
+                'No files were found for: "' . implode(', ', $fixturesInput) . "\".\n" .
+                "Check that files exist under fixtures path: \n\"" . $this->getFixturePath() . '".'
             );
         }
 
-        if (!$fixturesToLoad) {
+        if ($fixturesToLoad === []) {
             $this->notifyNothingToLoad($foundFixtures, $except);
-            return static::EXIT_CODE_NORMAL;
+            return ExitCode::OK;
         }
 
         if (!$this->confirmLoad($fixturesToLoad, $except)) {
-            return static::EXIT_CODE_NORMAL;
+            return ExitCode::OK;
         }
 
         $fixtures = $this->getFixturesConfig(array_merge($this->globalFixtures, $fixturesToLoad));
@@ -158,90 +162,115 @@ class FixtureController extends Controller
 
         $this->unloadFixtures($fixturesObjects);
         $this->loadFixtures($fixturesObjects);
-        $this->notifyLoaded($fixtures);
+        $this->notifyLoaded($fixturesObjects);
 
-        return static::EXIT_CODE_NORMAL;
+        return ExitCode::OK;
     }
 
     /**
      * Unloads the specified fixtures.
+     *
      * For example,
      *
      * ```
      * # unload the fixture data specified by User and UserProfile.
-     * yii fixture/unload User UserProfile
+     * yii fixture/unload "User, UserProfile"
      *
      * # unload all fixtures found under 'tests\unit\fixtures'
      * yii fixture/unload "*"
      *
      * # unload all fixtures except User and UserProfile
-     * yii fixture/unload "*" -User -UserProfile
+     * yii fixture/unload "*, -User, -UserProfile"
      * ```
      *
+     * @param array $fixturesInput
+     * @return int return code
      * @throws Exception if the specified fixture does not exist.
      */
-    public function actionUnload()
+    public function actionUnload(array $fixturesInput = [])
     {
-        $fixturesInput = func_get_args();
+        if ($fixturesInput === []) {
+            $this->printHelpMessage();
+            return ExitCode::OK;
+        }
+
         $filtered = $this->filterFixtures($fixturesInput);
         $except = $filtered['except'];
 
         if (!$this->needToApplyAll($fixturesInput[0])) {
-
             $fixtures = $filtered['apply'];
 
             $foundFixtures = $this->findFixtures($fixtures);
             $notFoundFixtures = array_diff($fixtures, $foundFixtures);
 
-            if ($notFoundFixtures) {
+            if ($notFoundFixtures !== []) {
                 $this->notifyNotFound($notFoundFixtures);
             }
-
         } else {
             $foundFixtures = $this->findFixtures();
         }
 
-        $fixturesToUnload = array_diff($foundFixtures, $except);
-
-        if (!$foundFixtures) {
+        if ($foundFixtures === []) {
             throw new Exception(
-                "No files were found by name: \"" . implode(', ', $fixturesInput) . "\".\n" .
-                "Check that files with these name exists, under fixtures path: \n\"" . $this->getFixturePath() . "\"."
+                'No files were found for: "' . implode(', ', $fixturesInput) . "\".\n" .
+                "Check that files exist under fixtures path: \n\"" . $this->getFixturePath() . '".'
             );
         }
 
-        if (!$fixturesToUnload) {
+        $fixturesToUnload = array_diff($foundFixtures, $except);
+
+        if ($fixturesToUnload === []) {
             $this->notifyNothingToUnload($foundFixtures, $except);
-            return static::EXIT_CODE_NORMAL;
+            return ExitCode::OK;
         }
 
         if (!$this->confirmUnload($fixturesToUnload, $except)) {
-            return static::EXIT_CODE_NORMAL;
+            return ExitCode::OK;
         }
 
         $fixtures = $this->getFixturesConfig(array_merge($this->globalFixtures, $fixturesToUnload));
 
-        if (!$fixtures) {
+        if ($fixtures === []) {
             throw new Exception('No fixtures were found in namespace: ' . $this->namespace . '".');
         }
 
         $this->unloadFixtures($this->createFixtures($fixtures));
         $this->notifyUnloaded($fixtures);
+
+        return ExitCode::OK;
+    }
+
+    /**
+     * Show help message.
+     */
+    private function printHelpMessage()
+    {
+        $this->stdout($this->getHelpSummary() . "\n");
+
+        $helpCommand = Console::ansiFormat('yii help fixture', [Console::FG_CYAN]);
+        $this->stdout("Use $helpCommand to get usage info.\n");
     }
 
     /**
      * Notifies user that fixtures were successfully loaded.
-     * @param array $fixtures
+     * @param Fixture[] $fixtures array of loaded fixtures
      */
     private function notifyLoaded($fixtures)
     {
         $this->stdout("Fixtures were successfully loaded from namespace:\n", Console::FG_YELLOW);
         $this->stdout("\t\"" . Yii::getAlias($this->namespace) . "\"\n\n", Console::FG_GREEN);
-        $this->outputList($fixtures);
+
+        $fixtureClassNames = [];
+
+        foreach ($fixtures as $fixture) {
+            $fixtureClassNames[] = $fixture::className();
+        }
+
+        $this->outputList($fixtureClassNames);
     }
 
     /**
-     * Notifies user that there are no fixtures to load according input conditions
+     * Notifies user that there are no fixtures to load according input conditions.
      * @param array $foundFixtures array of found fixtures
      * @param array $except array of names of fixtures that should not be loaded
      */
@@ -263,18 +292,18 @@ class FixtureController extends Controller
     }
 
     /**
-     * Notifies user that there are no fixtures to unload according input conditions
+     * Notifies user that there are no fixtures to unload according input conditions.
      * @param array $foundFixtures array of found fixtures
      * @param array $except array of names of fixtures that should not be loaded
      */
     public function notifyNothingToUnload($foundFixtures, $except)
     {
-        $this->stdout("Fixtures to unload could not be found according given conditions:\n\n", Console::FG_RED);
+        $this->stdout("Fixtures to unload could not be found according to given conditions:\n\n", Console::FG_RED);
         $this->stdout("Fixtures namespace is: \n", Console::FG_YELLOW);
         $this->stdout("\t" . $this->namespace . "\n", Console::FG_GREEN);
 
         if (count($foundFixtures)) {
-            $this->stdout("\nFixtures founded under the namespace:\n\n", Console::FG_YELLOW);
+            $this->stdout("\nFixtures found under the namespace:\n\n", Console::FG_YELLOW);
             $this->outputList($foundFixtures);
         }
 
@@ -312,7 +341,7 @@ class FixtureController extends Controller
      * Prompts user with confirmation if fixtures should be loaded.
      * @param array $fixtures
      * @param array $except
-     * @return boolean
+     * @return bool
      */
     private function confirmLoad($fixtures, $except)
     {
@@ -344,7 +373,7 @@ class FixtureController extends Controller
      * Prompts user with confirmation for fixtures that should be unloaded.
      * @param array $fixtures
      * @param array $except
-     * @return boolean
+     * @return bool
      */
     private function confirmUnload($fixtures, $except)
     {
@@ -383,7 +412,7 @@ class FixtureController extends Controller
     /**
      * Checks if needed to apply all fixtures.
      * @param string $fixture
-     * @return boolean
+     * @return bool
      */
     public function needToApplyAll($fixture)
     {
@@ -404,7 +433,6 @@ class FixtureController extends Controller
         $findAll = ($fixtures === []);
 
         if (!$findAll) {
-
             $filesToSearch = [];
 
             foreach ($fixtures as $fileName) {
@@ -416,10 +444,28 @@ class FixtureController extends Controller
         $foundFixtures = [];
 
         foreach ($files as $fixture) {
-            $foundFixtures[] = basename($fixture, 'Fixture.php');
+            $foundFixtures[] = $this->getFixtureRelativeName($fixture);
         }
 
         return $foundFixtures;
+    }
+
+    /**
+     * Calculates fixture's name
+     * Basically, strips [[getFixturePath()]] and `Fixture.php' suffix from fixture's full path.
+     * @see getFixturePath()
+     * @param string $fullFixturePath Full fixture path
+     * @return string Relative fixture name
+     */
+    private function getFixtureRelativeName($fullFixturePath)
+    {
+        $fixturesPath = FileHelper::normalizePath($this->getFixturePath());
+        $fullFixturePath = FileHelper::normalizePath($fullFixturePath);
+
+        $relativeName = substr($fullFixturePath, strlen($fixturesPath) + 1);
+        $relativeDir = dirname($relativeName) === '.' ? '' : dirname($relativeName) . '/';
+
+        return $relativeDir . basename($fullFixturePath, 'Fixture.php');
     }
 
     /**
@@ -432,12 +478,17 @@ class FixtureController extends Controller
         $config = [];
 
         foreach ($fixtures as $fixture) {
-
             $isNamespaced = (strpos($fixture, '\\') !== false);
-            $fullClassName = $isNamespaced ? $fixture . 'Fixture' : $this->namespace . '\\' . $fixture . 'Fixture';
+            // replace linux' path slashes to namespace backslashes, in case if $fixture is non-namespaced relative path
+            $fixture = str_replace('/', '\\', $fixture);
+            $fullClassName = $isNamespaced ? $fixture : $this->namespace . '\\' . $fixture;
 
             if (class_exists($fullClassName)) {
                 $config[] = $fullClassName;
+            } elseif (class_exists($fullClassName . 'Fixture')) {
+                $config[] = $fullClassName . 'Fixture';
+            } else {
+                throw new Exception('Neither fixture "' . $fullClassName . '" nor "' . $fullClassName . 'Fixture" was found.');
             }
         }
 
@@ -446,10 +497,11 @@ class FixtureController extends Controller
 
     /**
      * Filters fixtures by splitting them in two categories: one that should be applied and not.
+     *
      * If fixture is prefixed with "-", for example "-User", that means that fixture should not be loaded,
      * if it is not prefixed it is considered as one to be loaded. Returns array:
      *
-     * ```php
+     * ```
      * [
      *     'apply' => [
      *         'User',
@@ -484,11 +536,15 @@ class FixtureController extends Controller
 
     /**
      * Returns fixture path that determined on fixtures namespace.
+     * @throws InvalidConfigException if fixture namespace is invalid
      * @return string fixture path
      */
     private function getFixturePath()
     {
-        return Yii::getAlias('@' . str_replace('\\', '/', $this->namespace));
+        try {
+            return Yii::getAlias('@' . str_replace('\\', '/', $this->namespace));
+        } catch (InvalidParamException $e) {
+            throw new InvalidConfigException('Invalid fixture namespace: "' . $this->namespace . '". Please, check your FixtureController::namespace parameter');
+        }
     }
-
 }

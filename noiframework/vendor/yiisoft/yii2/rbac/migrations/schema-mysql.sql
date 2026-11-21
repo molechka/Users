@@ -3,9 +3,9 @@
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Alexander Kochetov <creocoder@gmail.com>
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  * @since 2.0
  */
 
@@ -17,7 +17,7 @@ drop table if exists `auth_rule`;
 create table `auth_rule`
 (
    `name`                 varchar(64) not null,
-   `data`                 text,
+   `data`                 blob,
    `created_at`           integer,
    `updated_at`           integer,
     primary key (`name`)
@@ -26,10 +26,10 @@ create table `auth_rule`
 create table `auth_item`
 (
    `name`                 varchar(64) not null,
-   `type`                 integer not null,
+   `type`                 smallint not null,
    `description`          text,
    `rule_name`            varchar(64),
-   `data`                 text,
+   `data`                 blob,
    `created_at`           integer,
    `updated_at`           integer,
    primary key (`name`),
@@ -52,5 +52,6 @@ create table `auth_assignment`
    `user_id`              varchar(64) not null,
    `created_at`           integer,
    primary key (`item_name`, `user_id`),
-   foreign key (`item_name`) references `auth_item` (`name`) on delete cascade on update cascade
+   foreign key (`item_name`) references `auth_item` (`name`) on delete cascade on update cascade,
+   key `auth_assignment_user_id_idx` (`user_id`)
 ) engine InnoDB;

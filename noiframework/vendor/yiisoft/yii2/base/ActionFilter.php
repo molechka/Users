@@ -1,11 +1,13 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
+
+use yii\helpers\StringHelper;
 
 /**
  * ActionFilter is the base class for action filters.
@@ -15,8 +17,13 @@ namespace yii\base;
  *
  * Check implementation of [[\yii\filters\AccessControl]], [[\yii\filters\PageCache]] and [[\yii\filters\HttpCache]] as examples on how to use it.
  *
+ * For more details and usage information on ActionFilter, see the [guide article on filters](guide:structure-filters).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Component = Component
+ * @extends Behavior<T>
  */
 class ActionFilter extends Behavior
 {
@@ -28,9 +35,11 @@ class ActionFilter extends Behavior
      * Note that if the filter is attached to a module, the action IDs should also include child module IDs (if any)
      * and controller IDs.
      *
+     * Since version 2.0.9 action IDs can be specified as wildcards, e.g. `site/*`.
+     *
      * @see except
      */
-    public $only;
+    public $only = [];
     /**
      * @var array list of action IDs that this filter should not apply to.
      * @see only
@@ -39,7 +48,7 @@ class ActionFilter extends Behavior
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function attach($owner)
     {
@@ -48,7 +57,7 @@ class ActionFilter extends Behavior
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function detach()
     {
@@ -91,7 +100,7 @@ class ActionFilter extends Behavior
      * This method is invoked right before an action is to be executed (after all possible filters.)
      * You may override this method to do last-minute preparation for the action.
      * @param Action $action the action to be executed.
-     * @return boolean whether the action should continue to be executed.
+     * @return bool whether the action should continue to be executed.
      */
     public function beforeAction($action)
     {
@@ -111,12 +120,13 @@ class ActionFilter extends Behavior
     }
 
     /**
-     * Returns an action ID by converting [[Action::$uniqueId]] into an ID relative to the module
+     * Returns an action ID by converting [[Action::$uniqueId]] into an ID relative to the module.
      * @param Action $action
      * @return string
      * @since 2.0.7
      */
-    protected function getActionId($action) {
+    protected function getActionId($action)
+    {
         if ($this->owner instanceof Module) {
             $mid = $this->owner->getUniqueId();
             $id = $action->getUniqueId();
@@ -133,11 +143,32 @@ class ActionFilter extends Behavior
     /**
      * Returns a value indicating whether the filter is active for the given action.
      * @param Action $action the action being filtered
-     * @return boolean whether the filter is active for the given action.
+     * @return bool whether the filter is active for the given action.
      */
     protected function isActive($action)
     {
         $id = $this->getActionId($action);
-        return !in_array($id, $this->except, true) && (empty($this->only) || in_array($id, $this->only, true));
+
+        if (empty($this->only)) {
+            $onlyMatch = true;
+        } else {
+            $onlyMatch = false;
+            foreach ($this->only as $pattern) {
+                if (StringHelper::matchWildcard($pattern, $id)) {
+                    $onlyMatch = true;
+                    break;
+                }
+            }
+        }
+
+        $exceptMatch = false;
+        foreach ($this->except as $pattern) {
+            if (StringHelper::matchWildcard($pattern, $id)) {
+                $exceptMatch = true;
+                break;
+            }
+        }
+
+        return !$exceptMatch && $onlyMatch;
     }
 }

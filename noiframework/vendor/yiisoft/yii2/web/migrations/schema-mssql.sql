@@ -3,18 +3,19 @@
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @author Misbahul D Munir <misbahuldmunir@gmail.com>
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  * @since 2.0.8
  */
 
-drop table if exists [session];
+if object_id('[session]', 'U') is not null
+    drop table [session];
 
 create table [session]
 (
     [id]  varchar(256) not null,
     [expire] integer,
-    [data]   BLOB,
+    [data]   nvarchar(max),
     primary key ([id])
 );

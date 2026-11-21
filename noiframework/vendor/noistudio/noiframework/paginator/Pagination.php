@@ -8,7 +8,7 @@
 namespace noicms\paginator;
 
 use Yii;
-use yii\base\Object;
+use yii\base\BaseObject;
 use yii\web\Link;
  
 use yii\web\Request;
@@ -70,7 +70,7 @@ use NoiCore;
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
  */
-class Pagination extends Object implements Linkable
+class Pagination extends BaseObject implements Linkable
 {
     const LINK_NEXT = 'next';
     const LINK_PREV = 'prev';

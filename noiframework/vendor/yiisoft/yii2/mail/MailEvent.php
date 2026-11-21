@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\mail;
@@ -24,11 +24,11 @@ class MailEvent extends Event
      */
     public $message;
     /**
-     * @var boolean if message was sent successfully.
+     * @var bool if message was sent successfully.
      */
     public $isSuccessful;
     /**
-     * @var boolean whether to continue sending an email. Event handlers of
+     * @var bool whether to continue sending an email. Event handlers of
      * [[\yii\mail\BaseMailer::EVENT_BEFORE_SEND]] may set this property to decide whether
      * to continue send or not.
      */

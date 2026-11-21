@@ -37,7 +37,7 @@ class NoiApp{
      $this->site_id=$site_data['_id']->__toString();
      $this->site_data=$site_data;
      }
-     if(isset(NoiCore::$must_be_loading['classes']) and count(NoiCore::$must_be_loading['classes']>0)){
+     if(isset(NoiCore::$must_be_loading['classes']) and is_array(NoiCore::$must_be_loading['classes']) and count(NoiCore::$must_be_loading['classes'])>0){
       foreach(NoiCore::$must_be_loading['classes'] as $names=>$path){
          
           \Yii::$classMap[$names] = $path;

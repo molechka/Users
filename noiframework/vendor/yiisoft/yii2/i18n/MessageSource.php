@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\i18n;
@@ -25,15 +25,14 @@ class MessageSource extends Component
     /**
      * @event MissingTranslationEvent an event that is triggered when a message translation is not found.
      */
-    const EVENT_MISSING_TRANSLATION = 'missingTranslation';
-
+    public const EVENT_MISSING_TRANSLATION = 'missingTranslation';
     /**
-     * @var boolean whether to force message translation when the source and target languages are the same.
+     * @var bool whether to force message translation when the source and target languages are the same.
      * Defaults to false, meaning translation is only performed when source and target languages are different.
      */
     public $forceTranslation = false;
     /**
-     * @var string the language that the original messages are in. If not set, it will use the value of
+     * @var string|null the language that the original messages are in. If not set, it will use the value of
      * [[\yii\base\Application::sourceLanguage]].
      */
     public $sourceLanguage;
@@ -79,15 +78,15 @@ class MessageSource extends Component
      * @param string $category the message category
      * @param string $message the message to be translated
      * @param string $language the target language
-     * @return string|boolean the translated message or false if translation wasn't found or isn't required
+     * @return string|bool the translated message or false if translation wasn't found or isn't required
      */
     public function translate($category, $message, $language)
     {
         if ($this->forceTranslation || $language !== $this->sourceLanguage) {
             return $this->translateMessage($category, $message, $language);
-        } else {
-            return false;
         }
+
+        return false;
     }
 
     /**
@@ -98,7 +97,7 @@ class MessageSource extends Component
      * @param string $category the category that the message belongs to.
      * @param string $message the message to be translated.
      * @param string $language the target language.
-     * @return string|boolean the translated message or false if translation wasn't found.
+     * @return string|bool the translated message or false if translation wasn't found.
      */
     protected function translateMessage($category, $message, $language)
     {

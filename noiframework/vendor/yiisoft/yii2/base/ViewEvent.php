@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\base;
@@ -31,7 +31,7 @@ class ViewEvent extends Event
      */
     public $output;
     /**
-     * @var boolean whether to continue rendering the view file. Event handlers of
+     * @var bool whether to continue rendering the view file. Event handlers of
      * [[View::EVENT_BEFORE_RENDER]] may set this property to decide whether
      * to continue rendering the current view file.
      */

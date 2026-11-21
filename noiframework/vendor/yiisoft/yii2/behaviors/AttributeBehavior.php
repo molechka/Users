@@ -1,17 +1,17 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\behaviors;
 
-use Yii;
 use Closure;
 use yii\base\Behavior;
 use yii\base\Event;
 use yii\db\ActiveRecord;
+use yii\db\BaseActiveRecord;
 
 /**
  * AttributeBehavior automatically assigns a specified value to one or multiple attributes of an ActiveRecord
@@ -22,14 +22,14 @@ use yii\db\ActiveRecord;
  * [[value]] property with a PHP callable whose return value will be used to assign to the current attribute(s).
  * For example,
  *
- * ```php
+ * ```
  * use yii\behaviors\AttributeBehavior;
  *
  * public function behaviors()
  * {
  *     return [
  *         [
- *             'class' => AttributeBehavior::className(),
+ *             'class' => AttributeBehavior::class,
  *             'attributes' => [
  *                 ActiveRecord::EVENT_BEFORE_INSERT => 'attribute1',
  *                 ActiveRecord::EVENT_BEFORE_UPDATE => 'attribute2',
@@ -42,9 +42,15 @@ use yii\db\ActiveRecord;
  * }
  * ```
  *
+ * Because attribute values will be set automatically by this behavior, they are usually not user input and should therefore
+ * not be validated, i.e. they should not appear in the [[\yii\base\Model::rules()|rules()]] method of the model.
+ *
  * @author Luciano Baraglia <luciano.baraglia@gmail.com>
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of BaseActiveRecord = BaseActiveRecord
+ * @extends Behavior<T>
  */
 class AttributeBehavior extends Behavior
 {
@@ -54,7 +60,7 @@ class AttributeBehavior extends Behavior
      * and the array values are the corresponding attribute(s) to be updated. You can use a string to represent
      * a single attribute, or an array to represent a list of attributes. For example,
      *
-     * ```php
+     * ```
      * [
      *     ActiveRecord::EVENT_BEFORE_INSERT => ['attribute1', 'attribute2'],
      *     ActiveRecord::EVENT_BEFORE_UPDATE => 'attribute2',
@@ -64,12 +70,12 @@ class AttributeBehavior extends Behavior
     public $attributes = [];
     /**
      * @var mixed the value that will be assigned to the current attributes. This can be an anonymous function,
-     * callable in array format (e.g. `[$this, 'methodName']`), an [[Expression]] object representing a DB expression
+     * callable in array format (e.g. `[$this, 'methodName']`), an [[\yii\db\Expression|Expression]] object representing a DB expression
      * (e.g. `new Expression('NOW()')`), scalar, string or an arbitrary value. If the former, the return value of the
      * function will be assigned to the attributes.
      * The signature of the function should be as follows,
      *
-     * ```php
+     * ```
      * function ($event)
      * {
      *     // return value will be assigned to the attribute
@@ -78,15 +84,20 @@ class AttributeBehavior extends Behavior
      */
     public $value;
     /**
-     * @var boolean whether to skip this behavior when the `$owner` has not been
+     * @var bool whether to skip this behavior when the `$owner` has not been
      * modified
      * @since 2.0.8
      */
     public $skipUpdateOnClean = true;
+    /**
+     * @var bool whether to preserve non-empty attribute values.
+     * @since 2.0.13
+     */
+    public $preserveNonEmptyValues = false;
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function events()
     {
@@ -102,7 +113,8 @@ class AttributeBehavior extends Behavior
      */
     public function evaluateAttributes($event)
     {
-        if ($this->skipUpdateOnClean
+        if (
+            $this->skipUpdateOnClean
             && $event->name == ActiveRecord::EVENT_BEFORE_UPDATE
             && empty($this->owner->dirtyAttributes)
         ) {
@@ -115,6 +127,9 @@ class AttributeBehavior extends Behavior
             foreach ($attributes as $attribute) {
                 // ignore attribute names which are not string (e.g. when set by TimestampBehavior::updatedAtAttribute)
                 if (is_string($attribute)) {
+                    if ($this->preserveNonEmptyValues && !empty($this->owner->$attribute)) {
+                        continue;
+                    }
                     $this->owner->$attribute = $value;
                 }
             }
@@ -130,7 +145,7 @@ class AttributeBehavior extends Behavior
      */
     protected function getValue($event)
     {
-        if ($this->value instanceof Closure || is_array($this->value) && is_callable($this->value)) {
+        if ($this->value instanceof Closure || (is_array($this->value) && is_callable($this->value))) {
             return call_user_func($this->value, $event);
         }
 

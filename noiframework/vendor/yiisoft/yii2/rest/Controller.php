@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\rest;
@@ -11,8 +11,10 @@ use Yii;
 use yii\filters\auth\CompositeAuth;
 use yii\filters\ContentNegotiator;
 use yii\filters\RateLimiter;
-use yii\web\Response;
 use yii\filters\VerbFilter;
+use yii\web\Response;
+use yii\web\Controller as WebController;
+use yii\base\Module;
 
 /**
  * Controller is the base class for RESTful API controller classes.
@@ -25,23 +27,28 @@ use yii\filters\VerbFilter;
  * 4. Rate limiting (see [[RateLimiter]]);
  * 5. Formatting response data (see [[serializeData()]]).
  *
+ * For more details and usage information on Controller, see the [guide article on rest controllers](guide:rest-controllers).
+ *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Module = Module
+ * @extends WebController<T>
  */
-class Controller extends \yii\web\Controller
+class Controller extends WebController
 {
     /**
      * @var string|array the configuration for creating the serializer that formats the response data.
      */
     public $serializer = 'yii\rest\Serializer';
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public $enableCsrfValidation = false;
 
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function behaviors()
     {
@@ -67,7 +74,7 @@ class Controller extends \yii\web\Controller
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     public function afterAction($action, $result)
     {

@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\console;
@@ -43,7 +43,7 @@ class Markdown extends \cebe\markdown\Parser
 
 
     /**
-     * Renders a code block
+     * Renders a code block.
      *
      * @param array $block
      * @return string
@@ -54,7 +54,10 @@ class Markdown extends \cebe\markdown\Parser
     }
 
     /**
-     * @inheritdoc
+     * Render a paragraph block.
+     *
+     * @param array $block
+     * @return string
      */
     protected function renderParagraph($block)
     {

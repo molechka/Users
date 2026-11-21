@@ -1,8 +1,8 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\test;
@@ -23,6 +23,8 @@ use yii\base\Component;
  *
  * You should normally override [[load()]] to specify how to set up a fixture; and override [[unload()]]
  * for clearing up a fixture.
+ *
+ * For more details and usage information on Fixture, see the [guide article on fixtures](guide:test-fixtures).
  *
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0

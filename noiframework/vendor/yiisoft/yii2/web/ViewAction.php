@@ -1,15 +1,15 @@
 <?php
 /**
- * @link http://www.yiiframework.com/
+ * @link https://www.yiiframework.com/
  * @copyright Copyright (c) 2008 Yii Software LLC
- * @license http://www.yiiframework.com/license/
+ * @license https://www.yiiframework.com/license/
  */
 
 namespace yii\web;
 
 use Yii;
 use yii\base\Action;
-use yii\base\InvalidParamException;
+use yii\base\ViewNotFoundException;
 
 /**
  * ViewAction represents an action that displays a view according to a user-specified parameter.
@@ -27,6 +27,9 @@ use yii\base\InvalidParamException;
  * @author Alexander Makarov <sam@rmcreative.ru>
  * @author Qiang Xue <qiang.xue@gmail.com>
  * @since 2.0
+ *
+ * @template T of Controller = Controller
+ * @extends Action<T>
  */
 class ViewAction extends Action
 {
@@ -80,27 +83,25 @@ class ViewAction extends Action
             if ($controllerLayout) {
                 $this->controller->layout = $controllerLayout;
             }
-
-        } catch (InvalidParamException $e) {
-
+        } catch (ViewNotFoundException $e) {
             if ($controllerLayout) {
                 $this->controller->layout = $controllerLayout;
             }
 
             if (YII_DEBUG) {
                 throw new NotFoundHttpException($e->getMessage());
-            } else {
-                throw new NotFoundHttpException(
-                    Yii::t('yii', 'The requested view "{name}" was not found.', ['name' => $viewName])
-                );
             }
+
+            throw new NotFoundHttpException(
+                Yii::t('yii', 'The requested view "{name}" was not found.', ['name' => $viewName])
+            );
         }
 
         return $output;
     }
 
     /**
-     * Renders a view
+     * Renders a view.
      *
      * @param string $viewName view name
      * @return string result of the rendering
@@ -123,9 +124,9 @@ class ViewAction extends Action
         if (!is_string($viewName) || !preg_match('~^\w(?:(?!\/\.{0,2}\/)[\w\/\-\.])*$~', $viewName)) {
             if (YII_DEBUG) {
                 throw new NotFoundHttpException("The requested view \"$viewName\" must start with a word character, must not contain /../ or /./, can contain only word characters, forward slashes, dots and dashes.");
-            } else {
-                throw new NotFoundHttpException(Yii::t('yii', 'The requested view "{name}" was not found.', ['name' => $viewName]));
             }
+
+            throw new NotFoundHttpException(Yii::t('yii', 'The requested view "{name}" was not found.', ['name' => $viewName]));
         }
 
         return empty($this->viewPrefix) ? $viewName : $this->viewPrefix . '/' . $viewName;
